@@ -1,0 +1,251 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Design tokens - dark (default) and light themes
+   Values are RGB triplets so Tailwind opacity modifiers keep working.
+   ========================================================================== */
+:root {
+  --font-display: 'Oswald', 'Bebas Neue', 'Impact', system-ui, sans-serif;
+  --font-ui: 'Oswald', 'Barlow Condensed', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* dark theme (default) */
+  --bg-primary: 10 11 12;      /* #0a0b0c */
+  --bg-secondary: 17 18 20;    /* #111214 */
+  --bg-tertiary: 26 28 31;     /* #1a1c1f */
+  --bg-card: 20 21 23;         /* #141517 */
+  --border: 42 45 49;          /* #2a2d31 */
+  --accent: 214 82 58;         /* #D6523A */
+  --accent-hover: 196 71 50;   /* #c44732 */
+  --accent-light: 232 107 85;  /* #e86b55 */
+  --text-primary: 247 245 239; /* #F7F5EF */
+  --text-secondary: 200 198 192;
+  --text-muted: 138 136 130;
+  --success: 16 185 129;
+  --warning: 245 158 11;
+  --error: 239 68 68;
+  --canvas-bg: 21 23 26;
+  --checker-a: 30 32 36;
+  --checker-b: 24 26 29;
+}
+
+.light {
+  --bg-primary: 247 245 239;   /* #F7F5EF - cream paper */
+  --bg-secondary: 255 255 255;
+  --bg-tertiary: 238 235 228;
+  --bg-card: 255 255 255;
+  --border: 218 213 203;
+  --accent: 214 82 58;
+  --accent-hover: 184 60 42;
+  --accent-light: 232 107 85;
+  --text-primary: 24 24 26;
+  --text-secondary: 82 80 75;
+  --text-muted: 130 127 120;
+  --success: 5 150 105;
+  --warning: 217 119 6;
+  --error: 220 38 38;
+  --canvas-bg: 232 229 221;
+  --checker-a: 255 255 255;
+  --checker-b: 228 225 218;
+}
+
+@layer base {
+  * {
+    @apply border-bg-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg-primary text-text-primary min-h-screen;
+    font-family: var(--font-ui);
+    font-kerning: none;
+    font-variant-ligatures: none;
+    font-feature-settings: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: geometricPrecision;
+    overflow: hidden;
+    height: 100%;
+  }
+
+  #root {
+    height: 100%;
+  }
+
+  ::selection {
+    @apply bg-accent-primary/30 text-text-primary;
+  }
+
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-bg-primary;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-bg-tertiary rounded-full hover:bg-bg-border;
+  }
+
+  ::-webkit-scrollbar-corner {
+    @apply bg-bg-primary;
+  }
+
+  /* Fonts load from the Google Fonts stylesheet linked in index.html. */
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 font-ui font-semibold text-sm uppercase tracking-wide transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-accent-primary text-white hover:bg-accent-hover active:scale-[0.98] shadow-glow-sm;
+  }
+
+  .btn-secondary {
+    @apply btn bg-bg-tertiary text-text-primary border border-bg-border hover:bg-bg-secondary active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-text-secondary hover:bg-bg-secondary hover:text-text-primary active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply btn bg-error text-white hover:brightness-110 active:scale-[0.98];
+  }
+
+  .input {
+    @apply w-full px-3 py-2 bg-bg-secondary border border-bg-border rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition-all duration-200;
+  }
+
+  .select {
+    @apply input appearance-none pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8882' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.6rem center;
+    background-size: 16px 16px;
+  }
+
+  .card {
+    @apply bg-bg-card border border-bg-border rounded-xl overflow-hidden shadow-card transition-all duration-300 hover:border-accent-primary/20;
+  }
+
+  .panel {
+    @apply bg-bg-secondary/80 backdrop-blur-xs border border-bg-border rounded-xl;
+  }
+
+  .glass {
+    @apply bg-bg-card/70 backdrop-blur-md border border-bg-border;
+  }
+
+  .toolbar-btn {
+    @apply p-2 rounded-lg bg-transparent text-text-secondary hover:text-text-primary hover:bg-bg-tertiary transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary;
+  }
+
+  .toolbar-btn-active {
+    @apply text-accent-primary bg-accent-primary/10;
+  }
+
+  .slider {
+    @apply w-full h-1.5 bg-bg-tertiary rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent-primary [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-text-primary [&::-webkit-slider-thumb]:shadow-lg [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent-primary [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-text-primary;
+  }
+
+  .tab-btn {
+    @apply px-3 py-1.5 text-sm font-ui font-medium text-text-secondary hover:text-text-primary transition-colors duration-200 relative after:absolute after:bottom-0 after:left-1/2 after:-translate-x-1/2 after:w-0 after:h-0.5 after:bg-accent-primary after:transition-all after:duration-300 hover:after:w-full;
+  }
+
+  .tab-btn-active {
+    @apply text-text-primary after:w-full;
+  }
+
+  .drop-zone {
+    @apply border-2 border-dashed border-bg-border rounded-xl p-8 text-center transition-all duration-300 hover:border-accent-primary/50 hover:bg-accent-primary/5;
+  }
+
+  .drop-zone-active {
+    @apply border-accent-primary bg-accent-primary/10;
+  }
+
+  /* Transparency checkerboard behind result previews */
+  .checker {
+    background-color: rgb(var(--checker-a));
+    background-image:
+      linear-gradient(45deg, rgb(var(--checker-b)) 25%, transparent 25%),
+      linear-gradient(-45deg, rgb(var(--checker-b)) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgb(var(--checker-b)) 75%),
+      linear-gradient(-45deg, transparent 75%, rgb(var(--checker-b)) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  }
+
+  .label-caps {
+    @apply text-[10px] font-semibold uppercase tracking-[0.2em] text-text-muted font-mono;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-in {
+    animation-fill-mode: both;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .bg-grid-lg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .light .bg-grid,
+  .light .bg-grid-lg {
+    background-image:
+      linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  }
+
+  /* Processing scanline (Neural Scan effect) */
+  .scanline::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    height: 28%;
+    background: linear-gradient(180deg, transparent, rgb(var(--accent) / 0.35), transparent);
+    animation: scan 1.6s linear infinite;
+    pointer-events: none;
+  }
+}
+
+/* Reduced motion: kill every transition/animation for calmer UX. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

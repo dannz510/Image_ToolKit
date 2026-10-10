@@ -1,0 +1,863 @@
+Build ONE standalone HTML file (no other files, no local assets, no JS framework) that recreates this logistics freight hero EXACTLY. Output only that complete HTML file.
+
+GOAL
+A full-viewport, overflow-hidden hero. Aerial freight-train video covers the entire screen. Overlay type and two feature blocks are composed on the train’s vertical center axis and mirrored across it. One entrance animation (~1.8s), then everything is still. Nothing loops except the background video. No scroll.
+
+DELIVERABLE RULES
+- Single .html file. All CSS inline in <style>. No external CSS/JS/fonts except the video URL below.
+- Do not download or host the video locally. Use this exact CloudFront URL as the <video> src AND as a <link rel="preload" as="video" type="video/mp4">:
+  https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261005_115944_095d91d4-030f-4e82-b42b-a388c0816d24.mp4
+- Video attributes: class="bg" autoplay muted loop playsinline disablepictureinpicture
+  aria-label="Aerial view of a container freight train crossing black coal terrain"
+- CSS for video: position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; background:#0a0b0c
+- Title: Logistics that works as hard as you do.
+- Meta description: One point of contact and full supply-chain visibility, origin to destination.
+- Viewport: width=device-width, initial-scale=1, viewport-fit=cover
+- html lang="en"
+
+FONTS (must match metrics, not generic system look)
+Define two families via @font-face. Prefer condensed grotesques: Display ≈ Oswald ExtraBold / Bebas Neue / Impact; UI ≈ Oswald / Barlow Condensed / condensed grotesque.
+@font-face Display: weight 800, font-display:block, ascent-override:99.9%, descent-override:20.1%, line-gap-override:0%
+@font-face UI: weight 700 AND weight 400, font-display:block, ascent-override:95%, descent-override:22.5%, line-gap-override:0%
+Fallbacks: UI,system-ui,sans-serif and Display,system-ui,sans-serif
+Body: font-kerning:none; font-variant-ligatures:none; font-feature-settings:normal; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:geometricPrecision
+html,body { height:100% } body { margin:0; background:#0a0b0c; overflow:hidden }
+
+COLORS
+--cream:#F7F5EF
+--white:#F9F9F9
+--ink:rgba(255,255,255,.88)
+--accent:#D6523A
+Page/frame background: #0a0b0c
+
+STRUCTURE (exact)
+<div class="frame">
+  <video class="bg" ...></video>
+  <div class="tint"></div>
+  <main class="stage">
+    eyebrow, headline (4 spans), mark SVG, section.feature.f-left, section.feature.f-right
+  </main>
+</div>
+
+TINT overlay (pointer-events:none), linear-gradient to bottom:
+rgba(0,0,0,0.118) 0%, 0.092 11%, 0.083 20%, 0.079 29%, 0.014 37.5%, 0.016 46%, 0.043 55%, 0.058 64%, 0.062 73%, 0.080 81%, 0.090 90%, 0.095 100%
+
+DESKTOP LAYOUT (default, landscape / wide)
+.frame { position:fixed; inset:0; overflow:hidden; background:#0a0b0c }
+:root {
+  --s: min(100vh / 800, 100vw / 716);
+  --cover: max(100vw / 1280, 100vh / 800);
+}
+.stage {
+  position:absolute; left:50%; top:50%;
+  width:1280px; height:800px;
+  margin:-400px 0 0 -640px;
+  transform:scale(var(--s)); transform-origin:50% 50%;
+}
+All overlay type is absolutely positioned inside this 1280×800 stage. Pixel values below are exact.
+
+COPY + TYPOGRAPHY (keep line breaks and the typo “end-o-end”)
+
+Eyebrow (.eyebrow): “WHY US”
+position absolute; left:0; top:67.8px; width:1280px; margin:0
+font:700 7.4px/7.4px UI; word-spacing:0.522px; text-align:center; text-transform:uppercase
+color:var(--cream); text-shadow:0 1px 3px rgba(0,0,0,.45)
+letter-spacing:2.252px; text-indent:2.252px
+inner span: position:relative; display:block; left:-0.9px
+
+Headline (.headline), four stacked spans, all uppercase:
+hl1 “LOGISTICS”     top:83.62px   letter-spacing:-0.075px  left:0.45px   text-indent:-0.075px
+hl2 “THAT WORKS”    top:137.02px  letter-spacing:-1.237px                 text-indent:-1.237px
+hl3 “AS HARD AS”    top:187.97px  letter-spacing:-0.237px  left:1.8px    text-indent:-0.237px
+hl4 “YOU DO.”       top:247.92px  letter-spacing:-0.487px  left:1.35px   text-indent:-0.487px
+.headline { position:absolute; left:0; top:0; width:1280px; margin:0
+  font:800 61.74px/61.74px Display; word-spacing:2.691px; text-align:center; text-transform:uppercase
+  color:var(--cream); text-shadow:0 15px 36px rgba(0,0,0,0.50) }
+each span { position:absolute; left:0; width:1280px; display:block; white-space:nowrap }
+
+Accent mark SVG (.mark): position:absolute; left:549.5px; top:493.6px; width:52px; height:52px; overflow:visible
+viewBox="0 0 52 52" fill="none"
+Circle: cx=26 cy=26 r=23 stroke=#D6523A stroke-width=1.6 stroke-dasharray="98.3 46.3" transform="rotate(2.5 26 26)"
+Inner group stroke=#D6523A stroke-width=1.6 stroke-linecap=round:
+  circle cx=26.5 cy=26.1 r=2.3
+  path d="M28.9 27.6C31.6 29 32.9 31.2 31.8 33.3 30.7 35.4 27.2 36.1 24.2 35.1"
+
+LEFT FEATURE (.f-left) text-align:right; right:748.5px
+Icon globe SVG viewBox="0 0 35 34" at right:-4.5px; top:549.5px; 35×34
+  clipPath id="gclip" circle cx=17.5 cy=17 r=9.80
+  outer dashed circle r=16.5 stroke=#F9F9F9 stroke-width=1.9 stroke-dasharray="3.6 3"
+  filled circle r=9.80 fill=#F9F9F9
+  grid lines stroke=#101215 stroke-width=0.90 clip-path url(#gclip):
+    M11.90 7.20 V26.80 / M17.5 7.20 V26.80 / M23.10 7.20 V26.80
+    M7.70 11.40 H27.30 / M7.70 17 H27.30 / M7.70 22.60 H27.30
+h2 top:617.68px; font:700 19.57px/20px UI; word-spacing:1.838px; uppercase; color:var(--white); text-shadow:0 1px 4px rgba(0,0,0,.4)
+  “One point of” (.t1 letter-spacing:-0.109px)
+  “contact” (.t2 letter-spacing:0.246px)
+p top:681.9px; right:12px; font:400 12.28px/15.1px UI; word-spacing:-0.194px; color:var(--ink); text-shadow:0 1px 3px rgba(0,0,0,.35)
+  “No more chasing multiple vendors. One” (.b1 ls:-0.097px; left:0.9px)
+  “team manages your entire end-o-end flow” (.b2 ls:-0.271px; left:1.8px)
+  “origin to destination.” (.b3 ls:-0.161px; left:0.9px)
+
+RIGHT FEATURE (.f-right) text-align:left; left:748.5px
+Stacked-containers SVG viewBox="0 0 35 38" at left:-3px; top:547.5px; 35×38
+  white rects fill=#F9F9F9: (0.5,0.5) 17×9.6 rx=0.5; (10.5,13.5) 13.5×10.9 rx=0.5; (17.5,28.3) 17×9.7 rx=0.5
+  door ticks fill=#101215 1.10×1.90 at:
+    top box y=2.50 and 6.50, x=2.50,5.60,8.70,11.80,14.90
+    mid box y=15.20 and 20.40, x=12.50,15.60,18.70,21.80
+    bottom box y=30.30 and 34.40, x=19.50,22.60,25.70,28.80,31.90
+h2 “Full supply chain” (.t1 ls:-0.354px; left:-0.9px) / “visibility” (.t2 ls:-0.154px)
+p left:12px
+  “Track your freight in real time and get” (.b1 ls:-0.247px; left:-0.9px)
+  “proactive updates before issues become” (.b2 ls:-0.15px; left:-0.9px)
+  “delays.” (.b3 ls:-0.247px; left:-0.9px)
+Feature h2/p spans: position:relative; display:block; white-space:nowrap
+.f-left h2 { right:0 } .f-right h2 { left:0 }
+
+ENTRANCE ANIMATION
+Only under @media (prefers-reduced-motion:no-preference). One sequence, then still. No infinite loops. Final state always transform:none; opacity:1.
+
+.eyebrow: riseIn 0.55s cubic-bezier(.33,.9,.35,1) 0.15s both
+@keyframes riseIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+
+.headline span: lineIn 0.9s cubic-bezier(.16,1,.3,1) both
+delays: hl1 .28s, hl2 .37s, hl3 .46s, hl4 .55s
+@keyframes lineIn {
+  0%   { opacity:0; transform:translateY(.26em); clip-path:inset(100% -30% 0% -30%) }
+  35%  { opacity:1 }
+  90%  { clip-path:inset(0% -30% -100% -30%) }
+  100% { opacity:1; transform:none; clip-path:inset(-80% -30% -100% -30%) }
+}
+
+.mark { transform-origin:50% 50%; animation: markIn 0.7s cubic-bezier(.2,.9,.25,1) 0.72s both }
+@keyframes markIn { from { opacity:0; transform:scale(.88) } to { opacity:1; transform:none } }
+
+.f-left:  blockInL 0.75s cubic-bezier(.16,1,.3,1) 0.82s both
+.f-right: blockInR 0.75s cubic-bezier(.16,1,.3,1) 0.90s both
+@keyframes blockInL { from { opacity:0; transform:translate(-12px,8px) } to { opacity:1; transform:none } }
+@keyframes blockInR { from { opacity:0; transform:translate( 12px,8px) } to { opacity:1; transform:none } }
+
+RESPONSIVE — TABLET PORTRAIT
+@media (min-width:610px) and (max-aspect-ratio:1/1)
+:root { --u: min(100vw / 768, 100vh / 1024); --rail: clamp(120px, calc(var(--cover) * 219), 26vw); }
+.stage becomes inset:0 grid, no transform/margin:
+  grid-template-columns: 1fr var(--rail) 1fr
+  grid-template-rows: auto auto 1fr auto auto minmax(0,.38fr)
+  padding: calc(46 * var(--u)) clamp(24px,5.2vw,72px) calc(24 * var(--u))
+Set .eyebrow,.headline,.feature,.feature h2,.feature p,.feature .icon to position:static
+eyebrow grid-area 1/1/2/-1; font-size:calc(11 * var(--u)); letter-spacing:.304em; text-indent:.304em; word-spacing:.07em; margin-bottom:calc(20 * var(--u))
+headline grid-area 2/1/3/-1; font-size:calc(84 * var(--u)); line-height:.92; word-spacing:.0436em; spans static, letter-spacing:-.012em
+mark grid-area 4/1/5/-1; justify-self:center; right:5%; width/height calc(64 * var(--u)); margin-bottom:calc(16 * var(--u))
+.f-left grid-area 5/1/6/2; .f-right 5/3/6/4  (mirrored across the rail, NOT stacked)
+icons display:block; width calc(42 * var(--u)); height calc(46 * var(--u)); margin-bottom:calc(14 * var(--u))
+  left icon margin-left:auto; margin-right:calc(-4.5 * var(--u))
+  right icon margin-right:auto; margin-left:calc(-3 * var(--u))
+h2 font-size:calc(22 * var(--u)); line-height:1.08; word-spacing:.094em; margin-bottom:calc(12 * var(--u)); spans white-space:normal; letter-spacing:-.018em
+p font-size:calc(14.5 * var(--u)); line-height:1.34; word-spacing:-.016em; max-width:calc(310 * var(--u)); spans display:inline; white-space:normal; letter-spacing:-.02em
+  left p margin-left:auto; margin-right:calc(10 * var(--u))
+  right p margin-right:auto; margin-left:calc(10 * var(--u))
+KEEP .f-left text-align:right and .f-right text-align:left
+
+RESPONSIVE — PHONE
+@media (max-width:609px)
+.frame { height:100vh; height:100dvh }
+:root { --u: min(100vw / 390, 100dvh / 780); }  (also set 100vh fallback then override with dvh)
+.stage: inset:0; grid-template-columns:100%;
+  grid-template-rows: auto auto 1fr auto auto auto minmax(0,.3fr)
+  padding: calc(30 * var(--u))  max(calc(22 * var(--u)), env(safe-area-inset-right))  max(calc(32 * var(--u)), env(safe-area-inset-bottom))  max(calc(22 * var(--u)), env(safe-area-inset-left))
+Unstack features but KEEP mirrored identity (do NOT center both):
+  eyebrow row 1; font-size:clamp(8px, calc(9.5 * var(--u)), 11px); same .304em tracking as tablet; margin-bottom:calc(16 * var(--u))
+  headline row 2; font-size:clamp(26px, min(11.6vw, calc(52 * var(--u))), 64px); line-height:.92; letter-spacing:-.012em
+  mark row 4; centered; right:5%; size clamp(38px, calc(46 * var(--u)), 54px); margin-bottom:calc(18 * var(--u))
+  .f-left row 5; margin-bottom:calc(26 * var(--u)); still right-aligned; icon on inner (right) edge
+  .f-right row 6; still left-aligned; icon on inner (left) edge
+  icons clamp(26px, calc(34 * var(--u)), 40px) × clamp(28px, calc(37 * var(--u)), 43px)
+  left icon margin-left:auto; margin-right:calc(-4 * var(--u))
+  right icon margin-right:auto; margin-left:calc(-3 * var(--u))
+  h2 clamp(15px, calc(17 * var(--u)), 20px); line-height:1.08
+  p clamp(11.5px, calc(13.5 * var(--u)), 14.5px); line-height:1.36; max-width:calc(320 * var(--u))
+  left p margin-left:auto; right p margin-right:auto
+
+DO NOT
+- Use a local jpg/png background
+- Change “end-o-end” to “end-to-end”
+- Add nav, footer, extra sections, buttons, or scroll
+- Loop the overlay animations
+- Orbit/zoom the camera UI; the VIDEO already tracks forward with the train — CSS must not animate the video
+- Center both feature blocks on phone; they stay mirrored on the rail axis
+
+Rebuild pixel-faithfully. Landscape tablets keep the 1280×800 scaled stage. Only portrait (max-aspect-ratio 1/1, min-width 610px) and phones (max-width 609px) reflow. Build a **single self-contained `index.html`** that recreates this cybersecurity landing page **pixel-faithfully**. Fixed fullscreen black stage, left-locked typography, right-side looping video atmosphere, one-shot entrance choreography, and a mobile burger overlay. No frameworks. No scroll. No cards. No purple. No rounded pills.
+
+---
+
+## 1. Document shell
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Security built into every system layer</title>
+```
+
+- `html, body { height:100%; background:#000; overflow:hidden }`
+- `body { -webkit-font-smoothing:antialiased; text-rendering:geometricPrecision }`
+
+---
+
+## 2. Fonts (exact aliases from the original)
+
+Embed two WOFF2 faces as `@font-face` with **`font-display:block`**:
+
+| CSS family alias | Actual font | Role |
+|---|---|---|
+| `'SG'` | **Space Grotesk** (original embeds the Light cut as `SpaceGrotesk-Light`) | Headline, button labels, stat labels, mobile menu rows |
+| `'JB'` | **JetBrains Mono Regular** (`JetBrainsMono-Regular`) | Nav links, subcopy, stat numbers, menu eyebrow/note/sublinks |
+
+CSS weight usage (even if the embed is a single cut — match the original declarations):
+
+- **SG**: `480` (buttons), `700` (h1 + mobile `.mrow`), `400` (stat labels)
+- **JB**: `400` (nav, sub, menu), `480` (stat numbers)
+
+Closest public substitutes if not copying the original base64: Google Fonts **Space Grotesk** + **JetBrains Mono**, still aliased as `'SG'` / `'JB'`.
+
+---
+
+## 3. Design tokens / scaling system
+
+Three design canvases via `--s`:
+
+**Desktop (default)**
+```css
+:root {
+  --s: min(100vw / 1505, 100vh / 700);
+  --red: #c81b1c;
+  --ink: #fff;
+  --sub: #e6e6e6;
+  --lab: #949494;
+  --bx:60; --by:36; --bs:44;   /* burger box */
+  --h1y: -12.5;
+  --suby: 167.5;
+  --numy: 19;
+  --laby: 74;
+}
+```
+
+**Tablet portrait** `@media (max-width:1023px) and (max-aspect-ratio:1/1)`  
+canvas **900×1200**:
+```css
+--s: clamp(0.82px, min(100vw / 900, 100vh / 1200), 1.25px);
+--bx:56; --by:33; --bs:40;
+--h1y:-10.25; --suby:137.4; --numy:15.6; --laby:60.7;
+```
+
+**Phone** `@media (max-width:599px)`  
+canvas **430×620**:
+```css
+--s: min(100vw / 430, 100vh / 620, 1.02px);
+--bx:26; --by:21; --bs:34;
+--h1y:-7.1; --suby:108; --numy:13; --laby:50;
+```
+
+Every layout value is `calc(N * var(--s))`. Do not use free rem/px layout outside this system.
+
+---
+
+## 4. Background video (mandatory exact URL)
+
+Use this **exact** CloudFront URL everywhere a bg plate appears:
+
+```
+https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260809_132544_b6ef0174-ed95-45ad-9a2f-ccb8acfbdce8.mp4
+```
+
+**Three synced `<video>` instances**, each with:
+`autoplay muted loop playsinline preload="auto"`
+
+1. `.bg > video` — primary full-bleed plate  
+2. `.bg2 > video` — second pass, lifted lower half  
+3. `.menu-tex > video` — faint overlay inside mobile menu  
+
+CSS:
+```css
+.screen { position:fixed; inset:0; overflow:hidden; background:#000 }
+.bg, .bg2 { position:absolute; inset:0; overflow:hidden; pointer-events:none }
+.bg { filter: url(#grade) }
+.bg video, .bg2 video {
+  position:absolute; inset:0; width:100%; height:100%;
+  object-fit:cover; object-position:center top; display:block;
+}
+.bg2 {
+  filter: url(#grade2);
+  mix-blend-mode: plus-lighter;
+  opacity: .35;
+  -webkit-mask-image: linear-gradient(180deg, transparent 21.5%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 21.5%, #000 100%);
+}
+```
+
+**Tablet portrait video treatment**
+- `.bg2 { display:none }`
+- `.bg video { object-position:right top; transform:scale(1.18); transform-origin:right top }`
+- `.bg` masked: `linear-gradient(180deg, #000 0 40%, transparent 64%)`
+- `.scrim` ON: `linear-gradient(100deg, #000 26%, rgba(0,0,0,.74) 50%, rgba(0,0,0,.18) 76%, transparent 92%)`
+
+**Phone video treatment**
+- videos `object-position:78% top`
+- `.bg2` shown again with mask `linear-gradient(180deg, transparent 10%, #000 60%)`
+- `.scrim` ON vertical:  
+  `linear-gradient(180deg, rgba(0,0,0,.10) 0%, rgba(0,0,0,.50) 24%, rgba(0,0,0,.86) 42%, #000 66%)`
+
+**Video sync script**: master = first video; on `timeupdate`, if other videos drift `>0.12s`, set `currentTime` to master. If `prefers-reduced-motion: reduce`, pause all and remove `autoplay`.
+
+**SVG color-grade filters** (required — applied to video containers):
+
+### `#grade`
+```xml
+<filter id="grade" color-interpolation-filters="sRGB">
+  <feComponentTransfer>
+    <feFuncR type="table" tableValues="0.0018 0.0105 0.0154 0.0228 0.0307 0.0404 0.0485 0.0585 0.0719 0.0923 0.1205 0.1466 0.1657 0.1866 0.2197 0.2405 0.2485 0.2921 0.3362 0.3465 0.3472 0.3781 0.3781 0.4078 0.4199 0.4391 0.4604 0.4763 0.4798 0.5197 0.5473 0.5720 0.5995 0.6048 0.6232 0.6322 0.6483 0.6734 0.7201 0.7201 0.7410 0.7707 0.7707 0.7790 0.8084 0.8084 0.8390 0.8595 0.8707 0.8870 0.8993 0.9085 0.9132 0.9132 0.9162 0.9162 0.9162 0.9162 0.9162 0.9162 0.9162 0.9162 0.9162 0.9238 0.9300"/>
+    <feFuncG type="table" tableValues="0.0023 0.0106 0.0159 0.0250 0.0333 0.0445 0.0535 0.0620 0.0707 0.0827 0.0936 0.1063 0.1214 0.1402 0.1678 0.1727 0.2029 0.2176 0.2461 0.2757 0.2814 0.3050 0.3415 0.3692 0.3826 0.3884 0.4617 0.4617 0.4617 0.4643 0.4643 0.4808 0.5706 0.6005 0.6005 0.6390 0.6390 0.6390 0.6390 0.6390 0.6390 0.6390 0.6390 0.6390 0.6524 0.6664 0.6805 0.6945 0.7086 0.7227 0.7367 0.7508 0.7648 0.7789 0.7929 0.8070 0.8211 0.8351 0.8492 0.8632 0.8773 0.8913 0.9054 0.9195 0.9300"/>
+    <feFuncB type="table" tableValues="0.0021 0.0110 0.0187 0.0311 0.0377 0.0466 0.0584 0.0706 0.0791 0.0924 0.1039 0.1145 0.1316 0.1464 0.1614 0.1719 0.1887 0.2014 0.2247 0.2458 0.2954 0.2954 0.3089 0.3938 0.3938 0.3988 0.3988 0.4581 0.4581 0.4762 0.4762 0.4763 0.5374 0.5560 0.5813 0.5813 0.5813 0.5813 0.5835 0.5969 0.6104 0.6238 0.6373 0.6507 0.6642 0.6777 0.6911 0.7046 0.7181 0.7315 0.7449 0.7584 0.7719 0.7853 0.7988 0.8123 0.8257 0.8391 0.8526 0.8661 0.8795 0.8930 0.9065 0.9199 0.9300"/>
+  </feComponentTransfer>
+</filter>
+```
+
+### `#grade2` (slightly darker lift pass)
+```xml
+<filter id="grade2" color-interpolation-filters="sRGB">
+  <feComponentTransfer>
+    <feFuncR type="table" tableValues="0.0016 0.0092 0.0136 0.0201 0.0270 0.0356 0.0427 0.0515 0.0633 0.0812 0.1060 0.1290 0.1458 0.1642 0.1933 0.2116 0.2187 0.2570 0.2959 0.3049 0.3055 0.3327 0.3327 0.3589 0.3695 0.3864 0.4052 0.4191 0.4222 0.4573 0.4816 0.5034 0.5276 0.5322 0.5484 0.5563 0.5705 0.5926 0.6337 0.6337 0.6521 0.6782 0.6782 0.6855 0.7114 0.7114 0.7383 0.7564 0.7662 0.7806 0.7914 0.7995 0.8036 0.8036 0.8063 0.8063 0.8063 0.8063 0.8063 0.8063 0.8063 0.8063 0.8063 0.8129 0.8184"/>
+    <feFuncG type="table" tableValues="0.0015 0.0069 0.0103 0.0163 0.0216 0.0289 0.0348 0.0403 0.0460 0.0538 0.0608 0.0691 0.0789 0.0911 0.1091 0.1123 0.1319 0.1414 0.1600 0.1792 0.1829 0.1983 0.2220 0.2400 0.2487 0.2525 0.3001 0.3001 0.3001 0.3018 0.3018 0.3125 0.3709 0.3903 0.3903 0.4153 0.4153 0.4153 0.4153 0.4153 0.4153 0.4153 0.4153 0.4153 0.4241 0.4332 0.4423 0.4514 0.4606 0.4698 0.4789 0.4880 0.4971 0.5063 0.5154 0.5246 0.5337 0.5428 0.5520 0.5611 0.5702 0.5793 0.5885 0.5977 0.6045"/>
+    <feFuncB type="table" tableValues="0.0013 0.0066 0.0112 0.0187 0.0226 0.0280 0.0350 0.0424 0.0475 0.0554 0.0623 0.0687 0.0790 0.0878 0.0968 0.1031 0.1132 0.1208 0.1348 0.1475 0.1772 0.1772 0.1853 0.2363 0.2363 0.2393 0.2393 0.2749 0.2749 0.2857 0.2857 0.2858 0.3224 0.3336 0.3488 0.3488 0.3488 0.3488 0.3501 0.3581 0.3662 0.3743 0.3824 0.3904 0.3985 0.4066 0.4147 0.4228 0.4309 0.4389 0.4469 0.4550 0.4631 0.4712 0.4793 0.4874 0.4954 0.5035 0.5116 0.5197 0.5277 0.5358 0.5439 0.5519 0.5580"/>
+  </feComponentTransfer>
+</filter>
+```
+
+Hide defs: `.svgdefs { position:absolute; width:0; height:0; overflow:hidden }`
+
+---
+
+## 5. Exact copy & DOM structure
+
+Layer tree inside `.screen`:
+
+1. `.bg` (+ video)  
+2. `.bg2` (+ video)  
+3. `.scrim` (hidden on desktop)  
+4. `.frame` (flex column) containing:
+   - `header`
+   - spacer `.sp.sp-a`
+   - `section.hero`
+   - spacer `.sp.sp-b`
+   - `section.stats`
+   - spacer `.sp.sp-c`
+5. `#menu.menu` overlay (mobile)
+
+### Header
+- **Logo**: 46×46 SVG, 4 chevron-arrows pointing inward (N/E/S/W), white stroke `#fff`, `stroke-width="3"`, butt caps. Paths per arm: `M23 0V19.5` + `M14 10.2L23 19.2L32 10.2`, rotated 0/90/180/270 around `(23,23)`. Desktop: left `60`, top `35`, size `45`.
+- **Nav** (desktop only): `Home` · `Resources▾` · `Benefits▾` · `Contact`  
+  - font JB 400 / `19.9` / white  
+  - nav origin left `482`, top `32`, height `58`  
+  - default sibling gap `40`; 2nd link margin-left `53`; 4th `37`  
+  - chevron SVG 11×6, stroke `currentColor` 1.7, path `M1 1L5.5 5L10 1`, size `11.6×7.2`, margin-top `-2.6`
+- **Burger** (≤1023px): 3 white bars; 3rd bar shorter (`.47` width) until open; open → X (`rotate ±45deg`, middle opacity 0). Aria: `Open menu` / `Close menu`.
+- **Top CTA** `.btn.btn-top`: label **Secure system** + arrow SVG (`M0 9H20.1` / `M12.1 1L20.1 9L12.1 17`), left `1232`, top `30`.
+
+### Hero
+Exact headline (two masked lines):
+```
+Security built into
+every system layer
+```
+Markup:
+```html
+<h1>
+  <span class="ln"><span>Security built into</span></span>
+  <span class="ln"><span>every system layer</span></span>
+</h1>
+```
+- SG 700, size `68.7`, line `76`, tracking `-2.4`, left `73`, top `--h1y`
+
+Subcopy (exact break):
+```
+Engineered to stay resilient, controlled,
+and uncompromised under pressure.
+```
+- JB 400, size `18.7`, line `26`, tracking `-0.87`, color `--sub`, left `73`, top `--suby`
+
+CTA `.btn.btn-cta` identical to top button, left `73`, top `248`.
+
+### Buttons (shared `.btn`)
+- Desktop: `212×58`, bg `--red`, padding L`18` R`22`, gap `11`
+- Label SG 480 / `20.85` / tracking `-0.62` / translateY `1.5`
+- Arrow `21.5×18`, white stroke 2
+- Hover (hover-capable only): bg `#b01617`; arrow `translateX(3)`
+- Tablet: `174×47.6`, pad `14.8/18`, gap `9`, label `17.1`
+- Phone: `185×50`, pad `15.7/19.1`, gap `9.6`, label `17.5`
+- Sharp corners (no border-radius)
+
+### Stats
+| Stat | Number | Label | left |
+|---|---|---|---|
+| s1 | `300+` | Clients | `70.4` |
+| s2 | `99%` | Satisfaction | `213.1` |
+| s3 | `$5M+` | Revenue | `392.6` (num offset `-4.4`) |
+
+- Numbers: JB 480 / `33.45` / white  
+- Labels: SG 400 / `21.9` / tracking `-0.62` / `--lab`  
+- Vertical rules `.r1` @ `181`, `.r2` @ `356`, width `1.5`, gradient  
+  `linear-gradient(180deg, rgba(255,255,255,.085), rgba(255,255,255,.21) 50%, rgba(255,255,255,.085))`
+
+### Fluid spacers (desktop)
+```
+.sp-a flex 239 / .sp-b 194 / .sp-c 115
+```
+(Tablet 340/276/163 · Phone 106/92/56)
+
+### Mobile menu (`#menu`)
+- Fullscreen black plate + `.menu-tex` video at opacity `.4` with top fade mask  
+- Red top rule `.menu-rule` height `2`, scales X from 0→1 on open (`.55s`, delay `.04s`, cubic-bezier `.2,.7,.2,1`)  
+- Eyebrow: `MENU` style — JB, `11.5`, letter-spacing `.22em`, uppercase, `--lab`  
+- Rows: Home · Resources (accordion) · Benefits (accordion) · Contact  
+  - Resources children: Documentation / Threat reports / Changelog  
+  - Benefits children: Continuous monitoring / Access control / Incident response  
+- Footer CTA full-width `.btn-menu` + note: `300+ clients &nbsp;/&nbsp; 99% satisfaction`  
+- Open: body class `nav-open`; list items stagger fade/rise delays `.08/.14/.20/.26s`  
+- Accordion: only one open; Escape closes; link click closes; resize to desktop closes  
+
+Breakpoint: `@media (max-width:1023px)` hide `nav` + `.btn-top`, show burger + menu.
+
+---
+
+## 6. Entrance animation (exact choreography)
+
+**Arm before paint** (inline in `<head>` after CSS): if WAAPI exists and motion is allowed, add class `intro` to `<html>` immediately so the finished page never flashes.
+
+**Initial `html.intro` CSS state**
+- logo / nav links / burger / sub / stats: `opacity:0`
+- logo `scale(.9)`; nav `translateY(7)`; sub `14`; nums `12`; labs `10`
+- rules `scaleY(0)` origin center
+- `.btn-top` / `.btn-cta`: `clip-path: inset(0 100% 0 0)` (wipe draw, not fade)
+- each `h1 .ln`: `overflow:hidden` + pad-bottom `6` / margin-bottom `-6` (protect SG descenders)
+- inner spans start at `translateY(120%)`
+
+**Master timeline** (absolute seconds; phone multiplies all durations/delays by `0.86`)
+
+Easings:
+- `EXPO = cubic-bezier(.16,1,.3,1)`
+- `QUINT = cubic-bezier(.22,1,.36,1)`
+- `QUART = cubic-bezier(.25,1,.5,1)`
+- `TYPE = cubic-bezier(.22,.85,.24,1)`
+
+| t | Action |
+|---|---|
+| 0.00 | Logo: opacity 0→1 + scale .9→1, dur `.70`, EXPO |
+| 0.12 | Nav links rise `7`, dur `.62`, stagger `.055`, QUINT |
+| 0.18 | Burger fade, dur `.55`, QUART |
+| 0.28 | Top button wipe clip, dur `.66`, EXPO |
+| 0.34 | Headline lines rise from 120%, dur `.98`, stagger `.09`, TYPE |
+| 0.74 | Sub rise `14`, dur `.72`, QUINT |
+| 0.90 | Hero CTA wipe, dur `.70`, EXPO |
+| 0.98 | Rules scaleY 0→1, dur `.60`, stagger `.07`, QUART |
+| 1.04 | Stat nums rise `12`, dur `.66`, stagger `.085`, QUINT |
+| 1.10 | Stat labs rise `10`, dur `.62`, stagger `.085`, QUINT |
+| ~1.9 | Complete |
+
+**Completion rules**
+- Wait for `document.fonts.ready` (backup `1000ms`), then `rAF` (+ `1200ms` backup) to start once.
+- Measure `--s` via probe `width: calc(100 * var(--s))` because unregistered custom props don’t resolve in getComputedStyle.
+- On finish: remove `intro`, **cancel** all animations (no residual inline styles). Hard deadline `4000ms`.
+- Background video is **never** part of the entrance — it is already on stage.
+- `prefers-reduced-motion: reduce`: no `intro` class; everything visible/static.
+
+---
+
+## 7. Interaction / a11y
+
+- Hover only under `@media (hover:hover)`: nav → `--red`; buttons darken; menu rows/sublinks as specified  
+- Focus-visible: `2` white outline, offset `3`  
+- Reduced motion: kill transitions (`* { transition:none !important }`) and skip entrance  
+
+---
+
+## 8. Non-negotiables for “exact”
+
+1. Exact video URL above (all 3 instances)  
+2. Font aliases `'SG'` = Space Grotesk, `'JB'` = JetBrains Mono, `font-display:block`  
+3. Canvas scaler `--s` with 1505×700 / 900×1200 / 430×620  
+4. Dual graded video layers + exact LUT filters  
+5. Copy, line breaks, stats, menu tree character-exact  
+6. One-shot WAAPI entrance with absolute timing table above  
+7. Sharp red CTAs (`#c81b1c`), no border-radius  
+8. Single-file HTML, fullscreen, no scroll đây là các ý tưởng thiết kế app của tôi, toi muốn xây dựng 1 repo hoàn chỉnh, đầy đủ các module, tính năng hoàn thiện, UI độ hoàn thiệu cao nhất theo prompt trên, thêm các tính năng đầy đủ cho một bộ toolkit, I need to ensure that this app can deploy to vercal or any hosting and using when I share the link, make plans and proccess to build the app from core to perfect one, great UI from origrinal ideas with several module functions. Ensure app has its own icon and brand , not using emoji, too ugly, drawn and gerate own, make this powerful maybe by combine with js, ts, css.. Batch Processing (Xử lý hàng loạt):Mô tả: Cho phép người dùng tải lên nhiều bức ảnh cùng lúc (JPG, PNG, WebP) và tự động chạy tiến trình xử lý lần lượt qua hàng đợi (Queue).Tính năng đi kèm: Tải xuống tất cả kết quả dưới dạng file nén .zip tiện lợi.Solid Background Composite (Ghép nền màu tùy chỉnh):Mô tả: Sau khi tách nền trong suốt, tự động lót một lớp màu nền tùy chọn (Trắng tinh, Đen tuyền, Xám kỹ thuật, hoặc mã màu HEX bất kỳ) để xuất ảnh dạng JPEG/PNG theo ý muốn.Image Optimization & Compression (Nén & Tối ưu dung lượng):Mô tả: Giảm dung lượng file ảnh (KB/MB) nhưng vẫn giữ nguyên chất lượng hiển thị thị giác, hỗ trợ chuyển đổi định dạng linh hoạt (PNG $\leftrightarrow$ JPG $\leftrightarrow$ WebP).Smart Cropping & Resizing (Cắt & Thay đổi kích thước):Mô tả: Cắt ảnh theo các tỉ lệ chuẩn thường dùng (1:1, 16:9, 4:3) hoặc thay đổi kích thước (Resize) theo pixel giữ nguyên tỷ lệ khung hình (Aspect Ratio).  Module Drag & Drop Uploader (Khu vực tải lên):
+
+Vùng kéo thả file trực quan, hỗ trợ chọn nhiều tệp cùng lúc với bộ lọc định dạng tệp tự động (.jpg, .png, .webp).
+
+Module Comparison Grid (Lưới hiển thị so sánh kết quả):
+
+Chia 2 cột (Side-by-side): Cột trái hiển thị ảnh gốc, cột phải hiển thị ảnh sau khi qua xử lý (kèm thông số thời gian xử lý và dung lượng file thay đổi).
+
+Module Export & Download Center (Trung tâm tải xuống):
+
+Nút tải xuống cho từng ảnh riêng lẻ hoặc nút "Tải toàn bộ (.ZIP)" cho trường hợp xử lý hàng loạt, giúp tiết kiệm thời gian thao tác. Dynamic Workspace (Không gian làm việc động):
+
+Giao diện chia màn hình linh hoạt (Split-screen) với hiệu ứng bóng mờ (Glassmorphism), hiển thị trực quan thông số dung lượng trước/sau khi xử lý.
+
+Session State Management:
+
+Quản lý trạng thái ảnh đã xử lý xuyên suốt các tab để người dùng không bị mất dữ liệu khi chuyển đổi qua lại giữa các công cụ. Trải Nghệm Thao Tác & Quản Lý Layer (Figma & Photoshop-like UX)
+Nền tảng Canvas vô hạn (Infinite Canvas): Giống như Figma, hỗ trợ làm việc cùng lúc trên nhiều Artboard (khung hình) với thao tác Zoom/Pan mượt mà ở tốc độ 60-120 FPS nhờ HTML5 Canvas / WebGL render.
+
+Non-Destructive Editing (Chỉnh sửa không phá hủy): Mọi thao tác cắt, lọc màu, xóa nền đều lưu dưới dạng một danh sách "Lịch sử thao tác" (Adjustment Layers / Modifiers Stack). Người dùng có thể bật/tắt hoặc chỉnh lại tham số của từng bước bất cứ lúc nào. 3D Post-Processing Shaders: Tích hợp bộ lọc Shaders qua EffectComposer của Three.js để tạo các hiệu ứng hình ảnh phức tạp như: Chromatic Aberration (Quang sai màu), Vignette, Glitch, Film Grain, Bloom / Glow, Scanlines. Dưới đây là sơ đồ cấu trúc hạ tầng (Infrastructure Architecture) và kế hoạch triển khai chi tiết cho một nền tảng chỉnh sửa ảnh **100% Free, Local-First, Zero-Cost** (không tốn phí duy trì server, không dùng API trả phí), tối ưu hóa hiệu năng cho cá nhân:
+
+---
+
+## 🏗️ Sơ Đồ Cấu Trúc Hạ Tầng (Architecture Overview)
+
+Hệ thống được thiết kế theo mô hình **Client-Side Heavy Architecture** (Xử lý nặng tại phía máy khách), chia làm 3 tầng rõ rệt:
+
+```text
+[ Client Device: Browser / Local Machine ]
+ ├── 1. Presentation Layer (UI/UX) -> Streamlit / HTML5 + Tailwind CSS
+ ├── 2. Core Processing Engine     -> WebAssembly (WASM) / ONNX Runtime Web / Python Local
+ └── 3. Storage & Persistence      -> IndexedDB / Local Cache (Zero Cloud Cost)
+
+```
+
+---
+
+## 📋 Chi Tiết Từng Tầng Hạ Tầng (Infrastructure Layers)
+
+### 1. Tầng Giao Diện & Điều Hướng (Presentation Layer)
+
+* **Công nghệ:** Streamlit (cho Python Local App) hoặc React.js + Vite + Tailwind CSS (nếu đóng gói dạng Pure Web App).
+* **Nhiệm vụ:**
+* Cung cấp không gian làm việc dạng *Canvas vô hạn* hoặc *Grid Dashboard*.
+* Quản lý trạng thái giao diện (Sidebar điều khiển, Panel thông số, Toast notifications).
+* Hiệu ứng chuyển động mượt mà (60 FPS) khi kéo thả tệp.
+
+
+
+### 2. Tầng Xử Lý Lõi & Trí Tuệ Nhân Tạo (Core Processing Engine)
+
+* **Xử lý AI (AI Inference):**
+* Chạy cục bộ bằng mô hình lượng tử hóa nhẹ (`u2netp` hoặc `isnet-general-use` phiên bản `.onnx`).
+* Thực thi qua **ONNX Runtime Web** (nếu chạy thuần trình duyệt) hoặc **Python + `rembg**` (nếu chạy local qua terminal), tận dụng trực tiếp GPU của máy tính qua WebGPU hoặc CUDA (nếu có) mà không mất phí cloud.
+
+
+* **Xử lý Đồ Họa & 3D (Graphics & 3D Pipeline):**
+* **2D Engine:** Sử dụng HTML5 Canvas / Fabric.js để crop, resize, lọc màu (Color Grading) trực tiếp trên RAM của máy.
+* **3D Engine:** Tích hợp **Three.js** để dựng hiệu ứng ảnh nổi 3D (Parallax Depth Map) hoặc khung trưng bày sản phẩm (Product Mockup).
+
+
+
+### 3. Tầng Lưu Trữ & Quản Lý Dữ Liệu (Storage & State Management)
+
+* **Cơ chế:** **Zero-Cloud Storage** (Không dùng Server Database).
+* **Công nghệ:** `IndexedDB` hoặc `Browser LocalStorage` kết hợp quản lý tệp tạm thời trong RAM (`Blob URLs`).
+* **Nhiệm vụ:** Lưu lịch sử thao tác (Undo/Redo Stack), cache mô hình AI sau lần tải đầu tiên để lần sau chạy offline hoàn toàn không cần mạng.
+
+---
+
+## 🚀 Kế Hoạch Triển Khai Theo Giai Đoạn (Deployment Roadmap)
+
+* **Giai đoạn 1: MVP (Minimum Viable Product - Khung nền móng)**
+* Dựng môi trường Python Local + Streamlit làm giao diện điều khiển.
+* Tích hợp core `rembg` và Pillow để hoàn thiện tính năng bóc tách nền và xuất file PNG/JPG cục bộ.
+
+
+* **Giai đoạn 2: Tối ưu hiệu năng & Giao diện hiện đại**
+* Chia nhỏ các module thành các Tab độc lập: *AI Studio, Color Grading, Batch Processing*.
+* Áp dụng cache mô hình để giảm độ trễ khởi động xuống dưới 1 giây.
+
+
+* **Giai đoạn 3: Mở rộng đồ họa nâng cao (Three.js Integration)**
+* Đưa các hiệu ứng chiều sâu 3D và giả lập ánh sáng môi trường vào các bức ảnh đã tách nền.
+* Đóng gói toàn bộ thành một gói cài đặt gọn nhẹ (hoặc chạy một dòng lệnh) để sẵn sàng sử dụng mọi lúc. Để biến một bộ toolkit chỉnh sửa ảnh thông thường thành một **Professional Pro-Grade Web Editor** (cấp độ chuyên nghiệp tương đương Lightroom/Photoshop trên nền web nhưng hoàn toàn miễn phí và chạy local), dưới đây là các ý tưởng tính năng cao cấp mà ông có thể tích hợp:
+
+---
+
+### 1. Advanced Non-Destructive Color Grading (Chỉnh màu chuyên nghiệp)
+
+* **Hue/Saturation/Luminance (HSL) Curve & Wheel:** Cung cấp bánh xe màu (Color Wheels) cho Shadows, Midtones, Highlights và các thanh trượt HSL riêng biệt cho từng dải màu (ví dụ chỉnh riêng sắc xanh của bầu trời hoặc màu da người).
+* **Cinematic LUTs Support:** Cho phép người dùng tải lên và áp dụng các tệp định dạng `.CUBE` (LUTs màu điện ảnh) trực tiếp lên ảnh qua WebGL, biến ảnh chụp thông thường thành tông màu phim Hollywood ngay lập tức.
+* **Tone Curve (Đường cong độ sáng):** Tùy chỉnh đường cong RGB và các kênh màu độc lập để kiểm soát độ tương phản sâu và độ sâu trường ảnh.
+
+### 2. AI-Powered Retouching & Object Cleanup (Retouch ảnh chân dung & Xóa vật thể)
+
+* **AI Skin Smoothing & Frequency Separation:** Thuật toán tách tần số (Frequency Separation) tự động phân tách lớp chi tiết da và lớp màu sắc, giúp làm mịn da tự nhiên mà không làm mất đi kết cấu hạt da gốc (skin texture).
+* **Context-Aware Object Eraser (Content-Aware Fill):** Cho phép tô bút lông lên bất kỳ vật thể thừa nào trên ảnh (dây điện, rác, người đi đường) và tự động xóa sạch, dùng thuật toán lấp đầy thông minh dựa vào không gian xung quanh.
+* **AI Facial Relighting & Enhancement:** Tự động nhận diện khuôn mặt, làm sáng đôi mắt (Eye Sparkle), làm rõ nét chân tóc và điều chỉnh hướng sáng chiếu vào mặt nhân vật.
+
+### 3. Professional Masking & Layer Blending (Mặt nạ & Trộn lớp cao cấp)
+
+* **Range Masks (Mặt nạ dải màu/độ sáng):** Tạo mặt nạ tự động chỉ tác động lên các vùng có độ sáng nhất định (Luminance Mask) hoặc một dải màu cụ thể (Color Mask) mà không cần vẽ thủ công.
+* **Advanced Blend Modes:** Tích hợp đầy đủ các chế độ hòa trộn layer chuẩn công nghiệp (Multiply, Screen, Overlay, Soft Light, Color Dodge, Exclusion) để ghép ảnh nghệ thuật, tạo hiệu ứng texture chồng lớp (double exposure).
+
+### 4. Precision Geometry & Lens Correction (Xử lý hình học & Ống kính)
+
+* **Perspective & Keystone Correction:** Công cụ kéo nắn phối cảnh (Perspective Warp) giúp biến dạng các bức ảnh chụp kiến trúc bị méo góc, ngả nghiêng trở thành thẳng tắp chuẩn kỹ thuật.
+* **Lens Vignette & Chromatic Aberration Fixer:** Tự động hoặc thủ công khử viền tím/xanh (Chromatic Aberration) do quang sai ống kính và thêm hiệu ứng tối góc nghệ thuật (Vignette).
+
+---
+
+### 💡 Gợi ý tư duy triển khai thực tế (Zero-Cost & High Performance):
+
+Thay vì viết lại toàn bộ các thuật toán chỉnh màu phức tạp từ đầu (rất nặng và tốn thời gian), ông có thể tận dụng các thư viện mã nguồn mở cực mạnh chạy hoàn toàn ở phía client (trình duyệt) như:
+
+* **Fabric.js / Pixi.js:** Xử lý hiển thị Canvas mượt mà, quản lý hệ thống Layer.
+* **CamanJS / glfx.js:** Thư viện WebGL xử lý các bộ lọc màu, hiệu ứng ánh sáng, curve, brightness/contrast cực kỳ nhanh mà không ngốn tài nguyên CPU.. ENSURE NO USING API AI, EVERYTHING MUST BE FREE.  Để đẩy bộ công cụ chỉnh sửa ảnh cục bộ (local-first) lên tầm vóc của các ứng dụng "next-gen" (thế hệ tiếp theo), dưới đây là những ý tưởng đột phá tiếp theo kết hợp giữa **công nghệ AI thời gian thực, tương tác đồ họa hiện đại và trải nghiệm người dùng tối ưu**:
+
+---
+
+### 1. Vector & SVG Integration (Đồ họa vector thông minh)
+
+* **AI Image-to-Vector (Trợ lý chuyển đổi Vector):** Tích hợp thuật toán dò đường viền (contour tracing) kết hợp AI để chuyển đổi một bức ảnh raster thông thường (JPG/PNG) thành file đồ họa vector sắc nét (SVG), cho phép phóng to vô hạn không bị vỡ hạt (rất hữu ích cho việc tạo logo, icon hoặc outline art).
+* **Smart Typography & Text on Path:** Cho phép chèn text uốn lượn theo đường cong, tích hợp sẵn các font chữ đẹp chạy local, tự động bắt dính vào các biên vật thể hoặc mặt phẳng phối cảnh trong ảnh.
+
+### 2. Batch Automation & Workflow Macros (Tự động hóa hàng loạt)
+
+* **Visual Action Recorder (Ghi lại chuỗi thao tác - Macro):** Tương tự như tính năng Actions trong Photoshop. Cho phép người dùng ghi lại một chuỗi các bước chỉnh sửa (Ví dụ: Tách nền $\rightarrow$ Giảm sáng 10% $\rightarrow$ Thêm viền trắng $\rightarrow$ Resize về 1080px), sau đó áp dụng tự động hàng loạt cho hàng trăm bức ảnh chỉ với một cú click.
+* **Smart Watermarking Studio:** Chèn chữ ký, logo cá nhân hoặc mờ (watermark) tự động vào hàng loạt ảnh với tùy chọn vị trí thông minh (né khuôn mặt và các vùng chi tiết chính của ảnh nhờ AI nhận diện chủ thể).
+
+### 3. Interactive WebGL Shaders & Artistic Filters (Hiệu ứng nghệ thuật số)
+
+* **Real-time Glitch & Cyberpunk Shaders:** Sử dụng GLSL (OpenGL Shading Language) để tạo các hiệu ứng kỹ thuật số thời gian thực như quét hình (CRT scanlines), quang sai màu dịch chuyển (RGB shift), hiệu ứng nhiễu sóng (Noise/Grain) hoặc hiệu ứng ma trận số học.
+* **Neural Style Transfer (Hòa trộn phong cách hội họa):** Cho phép áp dụng nét cọ và phong cách của các danh họa nổi tiếng (như Van Gogh, Monet, hoặc phong cách tranh cyberpunk, anime) lên bức ảnh của người dùng ngay trên GPU cục bộ.
+
+### 4. Collaborative Local-Network Sync (Đồng bộ mạng nội bộ - LAN P2P)
+
+* **P2P Share & Sync:** Sử dụng WebRTC để cho phép các máy tính trong cùng một mạng LAN (hoặc kết nối ngang hàng) có thể truyền tải ảnh, chia sẻ preset màu hoặc đồng bộ workspace trực tiếp với nhau qua trình duyệt mà không cần thông qua bất kỳ server trung gian nào.
+
+---
+
+Những ý tưởng này tiếp tục duy trì tiêu chí **0 đồng, không lệ thuộc cloud, chạy hoàn toàn bằng phần cứng cục bộ**, giúp biến dự án cá nhân thành một "creative studio" thực thụ!  🖥️ Sơ Đồ Tổng Thể Giao Diện (Layout Hierarchy)
+Giao diện được chia thành 4 Vùng Chức Năng Chính (Panels) trên một màn hình rộng (Workspace Layout):
+
+Plaintext
++-----------------------------------------------------------------------------------+
+| [1. TOP NAVBAR] Logo | Workspace Name | Quick Actions (Undo/Redo, Zoom, Export)   |
++-------------------+---------------------------------------+-----------------------+
+|                   |                                       |                       |
+|                   |                                       | [4. RIGHT PANEL]      |
+| [2. LEFT SIDEBAR] |      [3. CENTRAL CANVAS WORKSPACE]    | - Layer Stack         |
+| - Tool Selector   |      (Infinite Canvas / Viewport)     | - Adjustments / HSL   |
+| (Select, Crop,    |                                       | - AI Parameters       |
+|  Brush, Eraser,   |      [ Hiển thị ảnh / 3D Model ]      | - History Stack       |
+|  Text, Shape)     |                                       |                       |
+|                   |                                       |                       |
++-------------------+---------------------------------------+-----------------------+
+| [BOTTOM STATUS BAR] Memory usage, Image dimensions, FPS counter                     |
++-----------------------------------------------------------------------------------+
+🧩 Chi Tiết Thành Phần Từng Phân Khu (UI Modules)
+1. Top Navbar (Thanh điều hướng trên cùng)
+Brand & Project Name: Tên ứng dụng (ví dụ: Dannz Studio) và tên file đang chỉnh sửa (có trạng thái *Unsaved changes).
+
+Global Action Group:
+
+History Controls: Nút Undo / Redo (hoặc phím tắt Ctrl+Z / Ctrl+Y).
+
+View Controls: Phóng to/thu nhỏ (Zoom in/out), Fit to screen, bật tắt lưới căn chỉnh (Grid/Guides).
+
+Primary Export Button: Nút "Export / Download" nổi bật (Mở ra một Modal chọn định dạng: PNG trong suốt, JPG, WebP, chất lượng nén, hoặc tải file nén .ZIP nếu làm việc hàng loạt).
+
+2. Left Sidebar (Thanh công cụ tác nghiệp - Tool Palette)
+Thanh công cụ dọc nằm bên trái, chia thành các nhóm thao tác nhanh:
+
+Selection & Transform: Công cụ chọn vùng (Marquee/Lasso), Crop tự do, Xoay/Lật ảnh.
+
+AI Quick Actions (Điểm nhấn):
+
+Magic Remove BG: Xóa nền một chạm.
+
+Smart Erase: Cọ xóa vật thể thừa (Content-Aware).
+
+Depth & 3D: Chuyển ảnh 2D sang hiệu ứng nổi 3D Parallax.
+
+Retouch & Draw: Cọ vẽ (Brush), tẩy, chèn văn bản (Typography), thêm Shape hình học cơ bản.
+
+3. Central Canvas Workspace (Không gian làm việc trung tâm)
+Khu vực chiếm diện tích lớn nhất, hiển thị trực quan tác phẩm:
+
+Infinite Viewport: Cho phép dùng chuột giữa hoặc giữ phím Space để Pan (kéo khung nhìn) và cuộn chuột để Zoom mượt mà.
+
+Dual Comparison Mode (Tùy chọn): Chế độ chia đôi màn hình (Before / After Split Screen) để người dùng kéo thanh trượt so sánh trực tiếp ảnh gốc và ảnh sau khi chỉnh sửa.
+
+Interactive Overlay: Hiển thị khung bounding box, các điểm neo (anchor points) khi crop hoặc transform đối tượng.
+
+4. Right Sidebar (Bảng điều khiển thuộc tính & Thông số - Inspector / Properties Panel)
+Bảng điều khiển đa tab ở cạnh phải, thay đổi nội dung tùy theo công cụ đang chọn ở bên trái:
+
+Tab 1: Layers Stack (Quản lý lớp):
+
+Sắp xếp các lớp ảnh (Background, Subject Overlay, Text, Graphics), khóa layer, ẩn/hiện mắt (visibility), và thay đổi Blend Modes (Multiply, Screen, Overlay...).
+
+Tab 2: Adjustments & Color Grading (Chỉnh màu chuyên nghiệp):
+
+Các thanh trượt Brightness, Contrast, Exposure, Highlights, Shadows.
+
+Bảng điều khiển HSL (Hue, Saturation, Luminance) và đường cong Tone Curve.
+
+Tab 3: AI & Effects Properties:
+
+Dropdown chọn mô hình AI (u2net, isnet-general-use).
+
+Thanh tinh chỉnh độ sắc nét, bộ lọc màu phim (LUTs filters) hoặc thông số ánh sáng 3D.
+
+Tab 4: History Log:
+
+Danh sách dạng cây (Tree stack) ghi lại toàn bộ các bước đã làm, cho phép người dùng click ngược lại bất kỳ mốc thời gian nào để quay lại trạng thái cũ. REMEMBER TO APPLY the style in the prompt 
+
+Smart Templates & Presets System: Kho preset màu sắc (Moody, Cyberpunk, Film, Cinematic) kết hợp với các template khung hình tối ưu sẵn kích thước cho banner, thumbnail, story mạng xã hội.. Support Dark/light mode , support Multilanguage, support database to sync data between devies (have account to login) . ENSURE ALL THE WORKFLOW AND TIME PROCESSING IMAGE FASTER AS ITS CAN. Để biến một thanh trạng thái "Loading..." nhàm chán thành một trải nghiệm thị giác mang đậm chất **Cyberpunk / Tech-savvy**, quá trình xử lý (processing) ảnh cần được biến thành một **"show diễn công nghệ"** ngắn gọn nhưng cực kỳ mãn nhãn.
+
+Dưới đây là 4 ý tưởng animation minh họa quá trình xử lý ảnh độc đáo, khai thác triệt để sức mạnh của WebGL/Three.js và CSS hiện đại:
+
+---
+
+### 1. Neural Synapse Pulse (Mạng lưới thần kinh AI quét tâm trí)
+
+* **Cảm hứng:** Giống như các phân cảnh AI đang "suy nghĩ" trong phim khoa học viễn tưởng.
+* **Cách hoạt động:** Khi người dùng bấm nút xóa nền, bức ảnh gốc chuyển sang dạng **lưới trắng đen (Monochrome Grid)**. Một mạng lưới các điểm nút (Nodes) xuất hiện và phát sáng theo dạng xung điện (Pulse), lan tỏa từ tâm chủ thể ra các viền xung quanh. Các đường viền tóc hay chi tiết nhỏ được "khóa" lại bằng các tia sáng xanh nhấp nháy trước khi phần nền xung quanh tan biến.
+* **Công nghệ:** SVG Path animation kết hợp hiệu ứng Glow bằng CSS/Canvas.
+
+### 2. The 3D Wireframe Laser Scan (Tia quét laser không gian chiều sâu)
+
+* **Cảm hứng:** Công nghệ quét địa hình hoặc CAD engineering.
+* **Cách hoạt động:** Bức ảnh được dựng lên thành một mặt phẳng 3D nghiêng nhẹ (dùng Three.js). Một đường kẻ laser màu xanh dương hoặc neon chạy dọc từ trên xuống dưới bề mặt ảnh. Ngay tại vệt laser đi qua, phần nền được bóc tách lập tức thành dạng lưới khung dây (Wireframe) rồi biến mất, chỉ để lại phần chủ thể sáng bóng giữ nguyên màu sắc thực.
+* **Công nghệ:** Three.js (`MeshBasicMaterial` kết hợp wireframe shader).
+
+### 3. Particle Dissolve & Reassemble (Hiệu ứng hạt phân rã & hội tụ)
+
+* **Cảm hứng:** Hiệu ứng Thanos búng tay hoặc phân rã dữ liệu số.
+* **Cách hoạt động:** Ngay khi tiến trình bắt đầu, toàn bộ các pixel thuộc phần nền (background) của ảnh vỡ vụn thành hàng nghìn hạt bụi kỹ thuật số (Particles) bay lơ lửng và tan biến vào hư vô. Trong khi đó, các hạt thuộc về chủ thể được hút ngược lại và hội tụ chặt chẽ với nhau để tạo thành bức ảnh hoàn chỉnh cuối cùng.
+* **Công nghệ:** Three.js `Points` hoặc HTML5 Canvas Pixel Manipulation.
+
+### 4. The X-Ray Depth Layer Peel (Bóc lớp kính Hologram lớp-lớp)
+
+* **Cảm hứng:** Giao diện bóc tách linh kiện của Apple hoặc kính thực tế ảo AR.
+* **Cách hoạt động:** Bức ảnh được tách thành 3 lớp trong suốt (Glass Layers) xếp chồng lên nhau theo trục Z. Lớp đáy là background gốc dịch chuyển lùi ra xa và mờ dần. Lớp giữa là bản đồ độ sâu (Depth Map) hiển thị dạng ma trận số học chạy chữ liên tục. Lớp trên cùng là chủ thể chính được đẩy nổi lên phía trước với hiệu ứng viền sáng (Rim lighting) bao bọc.
+* **Công nghệ:** CSS 3D Transform (`perspective`, `translateZ`) kết hợp hiệu ứng đổ bóng động.
+
+---
+
+### 💡 Gợi ý lựa chọn để hiện thực hóa:
+
+Nếu muốn làm một hiệu ứng vừa **nhanh gọn, mượt mà** lại vừa **đậm chất lập trình viên**, hãy chọn **Ý tưởng số 3 (Particle Dissolve)** kết hợp với Three.js. Nó vừa thể hiện đúng bản chất "bóc tách dữ liệu" của AI, vừa tạo cảm giác ứng dụng của ông có chiều sâu đồ họa vượt trội so với các web tool thông thường.
+
+Ông thấy ấn tượng với phong cách quét laser kỹ thuật hay hiệu ứng phân rã hạt hơn? tham khảo các hướng đi sau chọn, tối uuw để tìm hướng khả thi: Để triển khai bộ Studio này theo đúng tiêu chí **Local-First, Zero-Dollar, High Performance** và deploy miễn phí lên **Vercel**, việc chọn kiến trúc phối hợp giữa **Python** và **Web Framework (Frontend)** là yếu tố then chốt.
+
+Dưới đây là phân tích kỹ thuật chi tiết về hai hướng kiến trúc tối ưu nhất để deploy lên Vercel:
+
+---
+
+## 🛠️ Hướng 1: Hybrid Architecture (Python Serverless API + Modern Frontend)
+
+*Phù hợp nếu muốn tận dụng hệ sinh thái Python (Pillow, OpenCV, PyTorch/ONNX) xử lý ở Backend.*
+
+### 1. Cơ chế hoạt động & Hạ tầng Vercel
+
+* **Frontend:** Viết bằng React/Vite/Next.js (hoặc Tailwind CSS + Three.js), biên dịch thành static asset cực nhanh, được Vercel phân phối qua CDN toàn cầu.
+* **Backend:** Sử dụng tính năng **Vercel Serverless Functions (Python Runtime)**. Đặt các script Python trong thư mục `/api/*.py`. Vercel sẽ tự động biến các file này thành RESTful API Endpoint (FastAPI hoặc Flask wrapper).
+
+### 2. Cấu trúc thư mục dự án (Directory Structure)
+
+```text
+dannz-ai-studio/
+├── api/
+│   ├── remove_bg.py       # Vercel Python Serverless Function (Rembg/ONNX)
+│   └── requirements.txt   # Danh sách thư viện Python nhẹ (rembg, pillow, numpy)
+├── src/
+│   ├── components/        # UI Components (Canvas, 3D Viewport, Layer Panel)
+│   └── main.js            # App Entrypoint
+├── public/                # Assets, Icons, Shaders
+├── vercel.json            # Cấu hình routing & Serverless execution timeout
+└── package.json           # Frontend dependencies (Three.js, Lucide-react)
+
+```
+
+### 3. Cách triển khai Code Backend (`/api/remove_bg.py`)
+
+Sử dụng **FastAPI** hoặc **BaseHTTPRequestHandler** để xử lý request cực nhẹ:
+
+```python
+from http.server import BaseHTTPRequestHandler
+from rembg import remove, new_session
+import io
+
+# Khởi tạo session AI Core (Tự động cache trong vòng đời Serverless Instance)
+session = new_session("u2netp") # Dùng u2netp để tối ưu dung lượng và tốc độ
+
+class handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        post_data = self.rfile.read(content_length)
+        
+        # Xử lý bóc tách nền
+        output_data = remove(post_data, session=session)
+        
+        # Tra cứu kết quả về Client
+        self.send_response(200)
+        self.send_header('Content-Type', 'image/png')
+        self.end_headers()
+        self.wfile.write(output_data)
+
+```
+
+### 4. Giới hạn cần lưu ý trên Vercel Serverless (Python)
+
+* **Execution Timeout:** Vercel Hobby plan giới hạn thời gian chạy của 1 Serverless Function là **10 giây**. Do đó phải dùng model AI thật nhẹ (như `u2netp` hoặc `onnxruntime-web`) để xử lý dưới 2-3s.
+* **Payload Size:** Giới hạn dung lượng request tải lên tối đa **4.5 MB**. Muốn xử lý ảnh lớn hơn, Client phải resize nhẹ trước khi gửi lên API.
+
+---
+
+## ⚡ Hướng 2: Pure Client-Side Architecture (WebGPU / WASM + Python Local Option)
+
+*Đây là hướng đi **Zero-Cost chuẩn đét 100%**, hoàn toàn né được giới hạn Serverless của Vercel.*
+
+### 1. Cơ chế hoạt động
+
+* Deploy toàn bộ Web App (HTML/JS/Three.js/ONNX Web Runtime) lên Vercel dạng **Static Web Site**.
+* Khi người dùng kéo thả ảnh, **mô hình AI `.onnx` được tự động tải về trình duyệt** và chạy trực tiếp trên card đồ họa (GPU/CPU) của người dùng bằng **WebGPU / WebAssembly (WASM)**.
+* **Serverless Vercel chỉ làm nhiệm vụ cấp file static (0% CPU Server tốn kém)**.
+
+### 2. So sánh 2 Hướng Deploy lên Vercel
+
+| Tiêu chí | Hướng 1: Hybrid (Python Serverless API) | Hướng 2: Pure Client-Side (WebGPU/WASM) |
+| --- | --- | --- |
+| **Nơi xử lý AI** | Trên Serverless Cloud của Vercel | Trực tiếp trên GPU máy tính người dùng |
+| **Giới hạn file ảnh** | Dưới 4.5 MB (Giới hạn Vercel) | Không giới hạn (Tùy thuộc RAM máy tính) |
+| **Độ trễ (Latency)** | Tốn thời gian upload/download ảnh | 0ms độ trễ mạng (Xử lý Offline) |
+| **Khả năng dính Lỗi Timeout** | Có (nếu ảnh quá nặng > 10s) | Không bao giờ bị timeout |
+| **Đánh giá phù hợp** | Phù hợp làm MVP kết nối Python sẵn có | **Hoàn hảo nhất cho Local-First / Zero-Dollar Studio** |
+
+---
+
+## 🚀 Các Bước Triển Khai Deploy Lên Vercel (Deployment Steps)
+
+1. **Chuẩn bị file `vercel.json` cấu hình Build:**
+```json
+{
+  "builds": [
+    { "src": "api/*.py", "use": "@vercel/python" },
+    { "src": "package.json", "use": "@vercel/static-build" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
+
+```
+
+
+2. **Đẩy code lên GitHub Repository.**
+3. **Kết nối Repository với Vercel Dashboard:**
+* Chọn `Import Project` $\rightarrow$ Chọn Repo GitHub.
+* Vercel tự động nhận diện file Python và Frontend để build chỉ trong 1-2 phút!
+
+
+
+---
+
+Nếu triển khai thực tế, ông muốn chọn **Hướng 1 (Dùng Python Backend API nhẹ)** hay **Hướng 2 (Chạy 100% bằng WebGPU trên trình duyệt qua Vercel Static)**?. Sau khi hoàn thành project, kiểm thử tính năng, lỗi, generate readme đầy đủ tên tác giả Dannz, tên sản phẩm, có các hướng dẫn sơ bộ, ảnh chụp đi kèm.
