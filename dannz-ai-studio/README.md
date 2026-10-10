@@ -219,23 +219,23 @@ Python endpoints; point the frontend at them by changing `API_BASE` in
 
 ## Screenshots
 
-> _Run `npm run dev`, then capture the views below and drop the PNGs into `docs/`._
+All captures below are from the running app (dark theme unless noted).
 
-| View | File | What to capture |
+| View | Preview | What it shows |
 |---|---|---|
-| **Landing / empty state** | `docs/01-landing.png` | The aerial-video hero with the condensed headline and drag-drop panel. |
-| **Single comparison (side)** | `docs/02-compare-side.png` | Original vs cutout in the two-up grid with the size/time stats strip. |
-| **Single comparison (slider)** | `docs/03-compare-slider.png` | The draggable before/after divider mid-sweep. |
-| **AI panel** | `docs/04-ai-panel.png` | Model picker, max-edge slider, alpha matting expanded, API status dot. |
-| **Adjust panel** | `docs/05-adjust-panel.png` | Brightness/contrast/saturation/hue/blur/sharpen + background + format + quality. |
-| **Presets** | `docs/06-presets.png` | The five preset cards with their parameter chips. |
-| **Batch queue** | `docs/07-batch.png` | Multi-file queue with mixed `done` / `pending` statuses. |
-| **Export modal** | `docs/08-export.png` | Format/quality/scale/background controls and the checkerboard preview. |
-| **Region erase** | `docs/08b-region-erase.png` | Rectangles drawn over leftover background in the Erase panel. |
-| **Workspace canvas** | `docs/09-workspace.png` | Fabric.js canvas with the floating toolbar and zoom readout. |
-| **Processing overlay** | `docs/10-processing.png` | Neural Scan with progress bar and cancel button. |
-| **Light theme** | `docs/11-light.png` | The cream-paper light variant of any view. |
-| **Settings / account** | `docs/12-settings.png` | Theme, language, sync export, clear data, about block. |
+| **Landing / empty state** | ![Landing](docs/01-landing.png) | The atmospheric video hero with the condensed headline and drag-drop panel. |
+| **Single comparison (side-by-side)** | ![Compare side](docs/02-compare-side.png) | Original vs cutout in the two-up grid with the size/time stats strip. |
+| **Comparison (slider)** | ![Compare slider](docs/03-compare-slider.png) | The draggable before/after divider mid-sweep. |
+| **AI panel** | ![AI panel](docs/04-ai-panel.png) | Model picker, max-edge slider, alpha matting expanded, API status dot. |
+| **Adjust panel** | ![Adjust panel](docs/05-adjust-panel.png) | Brightness/contrast/saturation/hue/blur/sharpen + background + format + quality. |
+| **Presets** | ![Presets](docs/06-presets.png) | The five preset cards with their parameter chips. |
+| **Batch queue** | ![Batch](docs/07-batch.png) | Multi-file queue with per-file status chips and the ZIP action. |
+| **Export modal** | ![Export](docs/08-export.png) | Format/quality/scale/background controls and the checkerboard preview. |
+| **Region erase** | ![Region erase](docs/08b-region-erase.png) | The Erase panel where rectangles are drawn over leftover background. |
+| **Workspace canvas** | ![Workspace](docs/09-workspace.png) | Fabric.js canvas with the floating toolbar and zoom readout. |
+| **Processing overlay** | ![Processing](docs/10-processing.png) | Neural Scan with the progress bar and cancel button. |
+| **Light theme** | ![Light](docs/11-light.png) | The cream-paper light variant (shown here in Vietnamese). |
+| **Settings / account** | ![Settings](docs/12-settings.png) | Theme, language, sync export, clear data, about block. |
 
 ```
 docs/
