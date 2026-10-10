@@ -20,6 +20,15 @@ export default defineConfig({
   },
   preview: {
     port: 4173,
+    host: true,
+    // `npm run preview` serves the production build but can still talk to
+    // the local Python API for a full-fidelity smoke test.
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
   },
   build: {
     target: 'esnext',
