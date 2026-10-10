@@ -1,0 +1,38 @@
+{
+  "name": "dannz-ai-studio",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Dannz AI Background & Image Studio - local-first, free image background removal and editing studio.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,md}\"",
+    "api": "python api/server.py",
+    "api:install": "pip install -r api/requirements.txt",
+    "icons": "python scripts/generate_icons.py"
+  },
+  "dependencies": {
+    "@zip.js/zip.js": "^2.7.60",
+    "clsx": "^2.1.1",
+    "fabric": "^5.5.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/fabric": "^5.3.10",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
+    "postcss": "^8.4.49",
+    "prettier": "^3.4.2",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
+  }
+}
