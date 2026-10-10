@@ -1,6 +1,10 @@
 /**
- * Registers the service worker and exposes a tiny update channel.
- * Kept dependency-free so it works before React mounts.
+ * Registers the service worker.
+ *
+ * - Skips dev mode entirely: HMR + SW caches fight each other and the reload
+ *   on update disrupts development.
+ * - On update (a *new* worker takes control) the page reloads once so the
+ *   freshly cached shell is used. The very first install does not reload.
  */
 
 const isLocalhost = Boolean(
@@ -11,17 +15,21 @@ const isLocalhost = Boolean(
 
 export function registerServiceWorker(): void {
   if (!('serviceWorker' in navigator)) return;
-  if (import.meta.env.DEV && !isLocalhost) return; // avoid HMR issues on LAN
+  if (import.meta.env.DEV && !isLocalhost) return;
+  if (import.meta.env.DEV) return; // never cache during development
 
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch((error) => {
       console.warn('[pwa] service worker registration failed:', error);
     });
 
-    let refreshing = false;
+    // Reload once when an *updated* worker starts controlling the page.
+    let hadController = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) return;
-      refreshing = true;
+      if (!hadController) {
+        hadController = true;
+        return;
+      }
       window.location.reload();
     });
   });
