@@ -3,7 +3,19 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Icon } from '../ui/Icon';
 
 export function LayersPanel() {
-  const { layers, activeResult, activeFile } = useStudio();
+  const {
+    layers,
+    activeResult,
+    activeFile,
+    selectedLayerIds,
+    toggleLayerSelection,
+    selectAllLayers,
+    deleteSelectedLayers,
+    moveLayer,
+    toggleLayerVisibility,
+    setLayerOpacity,
+    viewMode,
+  } = useStudio();
   const { t } = useLanguage();
 
   const source = activeResult ?? activeFile;
@@ -15,45 +27,139 @@ export function LayersPanel() {
         <span className="font-mono text-[10px] text-text-muted">{layers.length}</span>
       </div>
 
-      {!source ? (
+      {viewMode !== 'workspace' && (
+        <p className="rounded-lg border border-bg-border bg-bg-primary/50 p-2.5 font-mono text-[10px] leading-relaxed text-text-muted">
+          {t('layers.workspaceOnly')}
+        </p>
+      )}
+
+      {layers.length > 1 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={selectAllLayers}
+            className="btn-ghost !px-2 !py-1 text-[10px]"
+          >
+            {selectedLayerIds.length === layers.length
+              ? t('layers.deselectAll')
+              : t('layers.selectAll')}
+          </button>
+          <button
+            type="button"
+            onClick={deleteSelectedLayers}
+            disabled={!selectedLayerIds.length}
+            className="btn-ghost !px-2 !py-1 text-[10px] disabled:opacity-40"
+          >
+            <Icon name="trash" size={11} />
+            {t('layers.deleteSelected')}
+            {selectedLayerIds.length > 0 && ` (${selectedLayerIds.length})`}
+          </button>
+        </div>
+      )}
+
+      {!source && layers.length === 0 ? (
         <div className="rounded-lg border border-dashed border-bg-border p-6 text-center">
           <Icon name="layers" size={26} className="mx-auto text-text-muted" />
           <p className="mt-2 font-mono text-xs text-text-muted">{t('layers.empty')}</p>
         </div>
       ) : (
         <ul className="space-y-2">
-          {layers.map((layer, index) => (
-            <li
-              key={layer.id}
-              className="flex items-center gap-2.5 rounded-lg border border-bg-border bg-bg-primary/60 p-2"
-            >
-              {layer.data ? (
-                <img src={layer.data} alt="" className="h-9 w-9 rounded border border-bg-border object-cover" />
-              ) : (
-                <span className="grid h-9 w-9 place-items-center rounded border border-bg-border text-text-muted">
-                  <Icon name="image" size={14} />
-                </span>
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-ui text-sm text-text-primary">{layer.name}</p>
-                <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
-                  {t(`tool.${layer.type}`)} · {Math.round(layer.opacity * 100)}%
-                </p>
-              </div>
-              <span className="font-mono text-[10px] text-text-muted">#{index + 1}</span>
-            </li>
-          ))}
+          {layers.map((layer, index) => {
+            const selected = selectedLayerIds.includes(layer.id);
+            return (
+              <li
+                key={layer.id}
+                className={`rounded-lg border border-bg-border/30 bg-bg-primary/50 p-2 transition-all duration-200 ease-out glow-hover ${
+                  selected ? 'border-accent-primary option-active' : 'border-bg-border/40'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={(e) => toggleLayerSelection(layer.id, (e.nativeEvent as MouseEvent).shiftKey)}
+                    className="h-3.5 w-3.5 shrink-0 accent-[rgb(var(--accent))]"
+                    aria-label={t('layers.select')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleLayerVisibility(layer.id)}
+                    className="toolbar-btn !p-1"
+                    aria-label={t('layers.visibility')}
+                    title={t('layers.visibility')}
+                  >
+                    <Icon
+                      name={layer.visible ? 'box' : 'close'}
+                      size={13}
+                      className={layer.visible ? '' : 'opacity-40'}
+                    />
+                  </button>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-ui text-sm text-text-primary">{layer.name}</p>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+                      {t(`tool.${layer.type}`)} · {Math.round(layer.opacity * 100)}%
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => moveLayer(layer.id, 'up')}
+                      disabled={index === layers.length - 1}
+                      className="toolbar-btn !p-1 disabled:opacity-30"
+                      aria-label={t('layers.moveUp')}
+                      title={t('layers.moveUp')}
+                    >
+                      <Icon name="chevron-right" size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveLayer(layer.id, 'down')}
+                      disabled={index === 0}
+                      className="toolbar-btn !p-1 disabled:opacity-30"
+                      aria-label={t('layers.moveDown')}
+                      title={t('layers.moveDown')}
+                    >
+                      <Icon name="chevron-left" size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleLayerSelection(layer.id, false)}
+                      className="toolbar-btn !p-1 hover:text-error"
+                      aria-label={t('layers.delete')}
+                      title={t('layers.delete')}
+                    >
+                      <Icon name="trash" size={12} />
+                    </button>
+                  </div>
+                </div>
+                {selected && (
+                  <label className="mt-2 flex items-center gap-2">
+                    <span className="label-caps w-16">{t('layers.opacity')}</span>
+                    <input
+                      type="range"
+                      min={5}
+                      max={100}
+                      step={1}
+                      value={Math.round(layer.opacity * 100)}
+                      onChange={(e) => setLayerOpacity(layer.id, Number(e.target.value) / 100)}
+                      className="slider"
+                    />
+                    <span className="w-8 text-right font-mono text-[10px] text-text-muted">
+                      {Math.round(layer.opacity * 100)}%
+                    </span>
+                  </label>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
 
-      <div className="rounded-lg border border-bg-border bg-bg-primary/50 p-3">
-        <h4 className="label-caps">{t('layers.blend')}</h4>
-        <p className="mt-1.5 font-mono text-[10px] leading-relaxed text-text-muted">
-          Multiply · Screen · Overlay · Soft Light · Color Dodge · Exclusion
-          <br />
-          <span className="text-text-secondary">Active in Workspace view.</span>
+      {layers.length > 0 && (
+        <p className="font-mono text-[10px] leading-relaxed text-text-muted">
+          Shift+click to select several. Delete removes them from the canvas.
         </p>
-      </div>
+      )}
     </div>
   );
 }
@@ -109,7 +215,7 @@ export function PresetsPanel() {
         {presets.map((preset) => (
           <div
             key={preset.id}
-            className="rounded-lg border border-bg-border bg-bg-primary/60 p-3 transition-colors hover:border-accent-primary/40"
+            className="rounded-xl border border-bg-border/30 bg-bg-primary/40 mica p-3 transition-all duration-200 ease-out glow-hover hover:border-accent-primary/40"
           >
             <div className="flex items-start justify-between gap-2">
               <div>

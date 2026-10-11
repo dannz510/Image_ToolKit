@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useStudio } from '../../contexts/StudioContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icon } from '../ui/Icon';
@@ -23,12 +24,23 @@ export function BatchQueue() {
     setActiveFileId,
   } = useStudio();
   const { t } = useLanguage();
+  // Per-row checkboxes for bulk management (delete, process a subset).
+  const [checked, setChecked] = useState<string[]>([]);
 
   const doneCount = files.filter((f) => queueStatus[f.id] === 'done').length;
+  const allChecked = files.length > 0 && checked.length === files.length;
+
+  const toggle = (id: string) =>
+    setChecked((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const removeChecked = () => {
+    checked.forEach((id) => removeFile(id));
+    setChecked([]);
+  };
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-bg-border px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-2 border-b border-bg-border/40 bg-bg-secondary/30 px-4 py-2.5 backdrop-blur-sm">
         <h2 className="font-display text-sm font-bold uppercase tracking-[0.18em] text-text-primary">
           {t('batch.title')}
         </h2>
@@ -36,6 +48,16 @@ export function BatchQueue() {
           {t('batch.progress', { done: doneCount, total: files.length })}
         </span>
         <div className="flex-1" />
+        {checked.length > 0 && (
+          <button
+            type="button"
+            onClick={removeChecked}
+            className="btn-ghost !px-3 !py-1.5 text-xs hover:text-error"
+          >
+            <Icon name="trash" size={14} />
+            {t('batch.deleteSelected')} ({checked.length})
+          </button>
+        )}
         <button
           type="button"
           onClick={processBatch}
@@ -69,27 +91,50 @@ export function BatchQueue() {
         {files.length === 0 ? (
           <div className="flex h-full items-center justify-center p-6">
             <div className="text-center">
-              <Icon name="layers" size={36} className="mx-auto text-text-muted" />
+              <Icon name="folder" size={36} className="mx-auto text-text-muted" />
               <p className="mt-3 font-mono text-xs text-text-muted">{t('batch.empty')}</p>
             </div>
           </div>
         ) : (
           <ul className="divide-y divide-bg-border">
+            {files.length > 1 && (
+              <li className="flex items-center gap-3 bg-bg-secondary/40 px-4 py-2">
+                <input
+                  type="checkbox"
+                  checked={allChecked}
+                  onChange={() => setChecked(allChecked ? [] : files.map((f) => f.id))}
+                  className="h-3.5 w-3.5 accent-[rgb(var(--accent))]"
+                  aria-label={t('batch.selectAll')}
+                />
+                <span className="font-mono text-[10px] uppercase tracking-wider text-text-muted">
+                  {checked.length > 0 ? t('batch.selected', { count: checked.length }) : t('batch.selectAll')}
+                </span>
+              </li>
+            )}
             {files.map((file, index) => {
               const status = queueStatus[file.id] ?? 'pending';
               const result = results.find((r) => r.originalName === file.name);
               return (
                 <li
                   key={file.id}
-                  className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-bg-secondary/60"
+                  className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                    checked.includes(file.id) ? 'bg-accent-primary/10 glow-active' : 'hover:bg-bg-tertiary/60'
+                  }`}
                 >
+                  <input
+                    type="checkbox"
+                    checked={checked.includes(file.id)}
+                    onChange={() => toggle(file.id)}
+                    className="h-3.5 w-3.5 shrink-0 accent-[rgb(var(--accent))]"
+                    aria-label={file.name}
+                  />
                   <span className="w-6 text-center font-mono text-[11px] text-text-muted">
                     {index + 1}
                   </span>
                   <img
-                    src={file.dataUrl}
-                    alt=""
-                    className="h-10 w-10 rounded border border-bg-border object-cover"
+              src={file.dataUrl}
+              alt=""
+              className="h-10 w-10 rounded-lg border border-bg-border/30 object-cover"
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-ui text-sm text-text-primary">{file.name}</p>

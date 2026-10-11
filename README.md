@@ -28,12 +28,14 @@ happens on your machine; only the actual AI inference has a (free) serverless pa
 │  Pipeline        composite · resize · crop · convert · compress · zip        │
 │  Persistence     IndexedDB (images, results, settings, history, accounts)    │
 └──────────────────────────────────────────────────────────────────────────────┘
-                                   │  POST /api/remove_bg
-                                   ▼
+│                                    │  POST /api/remove_bg
+│                                    │  POST /api/fetch_image  (load image from URL)
+│                                    ▼
 ┌─────────────────────────── Serverless (Python) ──────────────────────────────┐
 │  Vercel Function   rembg + onnxruntime, warm ONNX session cache              │
 │  Models            u2netp · u2net · isnet-general-use · u2net_human_seg · …  │
 │  Status            GET /api/health  → model list + cache warm state          │
+│  Remote fetch      server-side download, SSRF-hardened, never browser CORS   │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -63,6 +65,8 @@ happens on your machine; only the actual AI inference has a (free) serverless pa
 | **Theme** | Dark by default, light "cream paper" variant. Persisted and applied before first paint (no flash). |
 | **PWA** | Manifest, maskable icons, installable, offline shell with per-request cache strategy. |
 | **Neural Scan overlay** | Processing stages (removing background → compositing → resizing → finalizing) with progress + cancel. |
+| **Visual design** | Mica/glass panels with backdrop blur, glow-on-hover buttons, soft rounded edges and subtle borders over design tokens — dark plus cream light theme. |
+| **Mobile-first layout** | Below 1024 px the shell reflows: tool strip becomes a horizontal rail, the right panel becomes a collapsible bottom sheet (auto-collapsed on the homepage so the hero is never covered), and the top bar compacts to icon-only controls. |
 
 ---
 
@@ -71,9 +75,10 @@ happens on your machine; only the actual AI inference has a (free) serverless pa
 ```
 dannz-ai-studio/
 ├── api/
-│   ├── remove_bg.py          # Vercel serverless background-removal endpoint
+│   ├── remove_bg.py          # POST /api/remove_bg — AI background removal
 │   ├── health.py             # GET /api/health — model list + cache state
-│   ├── server.py             # local dev router for both endpoints
+│   ├── fetch_image.py       # POST /api/fetch_image — server-side image download for "load from URL"
+│   ├── server.py             # local dev router for all three endpoints
 │   └── requirements.txt      # rembg, onnxruntime, pillow, numpy
 ├── public/
 │   ├── favicon.svg           # brand mark (vector)
@@ -171,7 +176,28 @@ Optional extras:
 ```bash
 npm run icons         # regenerate PNG/ICO brand assets with pure Python
 npm run format        # prettier across src/
+npm run lint          # eslint (bugs + hooks rules)
 ```
+
+### 5 — Verify the API endpoints
+
+```bash
+curl http://127.0.0.1:8000/api/health
+# {"status":"ok","models":["u2netp","silueta","u2net_human_seg"],"warm":true}
+
+curl -X POST http://127.0.0.1:8000/api/fetch_image \
+     -H 'Content-Type: application/json' \
+     -d '{"url":"https://example.com/photo.jpg"}' -o photo.jpg
+```
+
+`/api/fetch_image` is what makes "load from URL" work: browsers cannot read
+most cross-origin image responses (no `Access-Control-Allow-Origin`), and the
+app runs with `connect-src 'self'`, so the download happens server-side. That
+endpoint refuses non-`http(s)` URLs, URLs with credentials, non-trivial ports
+(any HTTP method on a public host only), and any host that resolves into
+private/loopback/link-local/metadata ranges — redirects are followed manually
+and every hop re-validated. Responses are capped at 15 MB and their bytes must
+be a real raster image.
 
 ---
 
@@ -200,13 +226,17 @@ vercel --prod     # every push after can auto-deploy from GitHub
 }
 ```
 
-No environment variables are required. Remember the Vercel Hobby limits:
+No environment variables are required. Remember the Vercel plan limits —
+`vercel.json` ships `maxDuration: 30` for the API functions, which a Hobby
+plan caps at its own maximum; if you stay on Hobby, budget for the shorter of
+the two:
 
 | Limit | Value | How the app copes |
 |---|---|---|
-| Function runtime | 10 s | `u2netp` default + client-side pre-downscale to 1600 px |
+| Function runtime | 30 s (capped lower on Hobby) | `u2netp` default + warm model cache + client-side pre-downscale to 1600 px; inference is serialised by a semaphore |
 | Request body | 4.5 MB | `prepareForUpload()` re-encodes oversized images before upload |
 | Model cold start | ~devtime | Weights cached in `/tmp`, session reused while the instance is warm |
+| URL import | network-bound | `/api/fetch_image` uses its own 15 s timeout and 15 MB cap, so a slow host can consume most of the budget |
 
 ### Any static host
 
@@ -217,25 +247,185 @@ Python endpoints; point the frontend at them by changing `API_BASE` in
 
 ---
 
+## Feature walkthrough
+
+A guided tour of every feature, in the order you would use them.
+
+### 1 — Landing: four ways in (drag, browse, paste, URL)
+
+![Landing](docs/01-landing.png)
+
+The empty state is the hub. The atmospheric video plate sits behind a
+left-locked headline, and the drop panel accepts an image four ways:
+
+| Route | How |
+|---|---|
+| **Browse** | Click *BROWSE FILES* — a single, predictable native picker |
+| **Drag & drop** | Drop anywhere in the window; the whole viewport gets a dashed accent veil |
+| **Paste** | Copy an image, then `Ctrl/Cmd+V` — the global paste handler reads the clipboard |
+| **From URL** | Paste a link and press *LOAD* — downloaded server-side by `/api/fetch_image` so cross-origin CORS never blocks you |
+
+Supported: JPG, PNG, WebP, GIF, BMP, TIFF. The uploaded image is processed
+**immediately** — there is no second "run" click.
+
+### 2 — Compare the cutout: side-by-side or slider
+
+![Comparison side-by-side](docs/02-compare-side.png)
+
+Two figure panes, *ORIGINAL* and *RESULT*, over transparency checkerboards,
+with a live stats strip: dimensions, size before, size after and bytes saved.
+
+![Comparison slider](docs/03-compare-slider.png)
+
+*SWAP SIDES* flips to an interactive before/after divider you can drag
+anywhere across the canvas — handy for judging hair and fur edges.
+
+### 3 — Choose the brain: model, max-edge, alpha matting
+
+![AI panel](docs/04-ai-panel.png)
+
+The **AI** tab controls the inference itself:
+
+- **Model** — `u2netp - fastest` (default, ~5 MB download), `u2net - balanced`,
+  `isnet - best quality` (176 MB), `u2net_human_seg - people`, `silueta - light`
+- **Max edge (px)** — large inputs are downscaled before upload (320–2400 px),
+  which keeps the serverless function inside its time budget
+- **Alpha matting** — softer edges on hair and fur, slower. Expands into
+  foreground threshold, background threshold and erode size for fine control
+- **API status** — a live dot from `GET /api/health`, plus a *CHECK* button
+
+### 4 — Adjust, re-encode, composite
+
+![Adjust panel](docs/05-adjust-panel.png)
+
+Non-destructive adjustments re-applied as canvas filters (nothing is baked in
+until export): brightness, contrast, saturation, hue, blur, sharpen — plus a
+background picker (transparent / white / black / slate / custom hex) and the
+output format with a quality slider. JPEG and WebP flatten transparency onto
+white automatically.
+
+### 5 — One-click looks: presets
+
+![Presets](docs/06-presets.png)
+
+*PRODUCT PHOTO*, *PORTRAIT*, *CYBERPUNK*, *CINEMATIC* and *CLEAN WEB* each
+bundle model, background, format and adjustments. One click applies the
+whole stack; the chips under each card show what it changes.
+
+### 6 — Clean up what the AI missed: manual region erase
+
+![Region erase](docs/08b-region-erase.png)
+
+Paint rectangles directly on the cut-out to erase leftover background. Each
+rectangle is stored in image-pixel space, listed in the panel, individually
+removable, and applied with one click — the result is committed as a new
+version, so the original stay intact.
+
+### 7 — Infinite workspace: zoom, pan, layers
+
+![Workspace](docs/09-workspace.png)
+
+A Fabric.js canvas with a floating glass toolbar: select, crop, brush, eraser,
+text and shape tools; scroll to zoom (the readout shows the current percentage),
+fit-to-view, and a full `Ctrl+Z` / `Ctrl+Y` undo-redo stack.
+
+![Workspace tools](docs/10-workspace-tools.png)
+
+Every tool owns the right panel — here the brush panel with colour, size,
+opacity, brush type (brush/pen/pencil/marker/airbrush) and a live stroke
+preview.
+
+### 8 — Layers
+
+![Layers](docs/11-layers.png)
+
+The base cutout layer is listed with visibility, opacity and move up/down
+controls — the workspace is non-destructive, so nothing is destroyed until
+you export or save.
+
+### 9 — History
+
+![History](docs/12-history.png)
+
+Every upload, processing run, preset apply and export is timestamped and
+persisted in IndexedDB across sessions.
+
+### 10 — Batch processing
+
+![Batch](docs/07-batch.png)
+
+The queue lists every file with its own status chip
+(`pending → processing → done / failed`), a live progress bar, cancel
+mid-run, select-all, remove, and a *DOWNLOAD ZIP* action that packages
+every finished cutout.
+
+### 11 — Export center
+
+![Export modal](docs/13-export.png)
+
+File name, format (PNG transparent / JPG smallest / WebP modern), quality,
+scale 10–200 % and background — with an on-canvas checkerboard preview and
+single download or ZIP.
+
+### 12 — Local accounts and settings
+
+![Auth](docs/14-auth.png)
+
+Accounts are local: username + password (salted SHA-256 via Web Crypto) stored
+in IndexedDB. No server database, no email.
+
+![Settings](docs/12-settings.png)
+
+Settings holds the theme, language, account sync export/import
+(`dannz-sync.json` to move settings between devices), clear-local-data and
+the about block.
+
+### 13 — Processing feedback: the Neural Scan overlay
+
+![Processing](docs/10-processing.png)
+
+While the model runs, a scanline overlay names each stage (removing
+background → compositing → resizing → finalizing) with progress and a
+cancel button.
+
+### 14 — Themes, languages, mobile
+
+![Light theme](docs/11-light.png)
+
+Dark by default, plus a cream-paper **light** variant — both persisted and
+applied before first paint so there is no flash. The UI is also fully
+localised in **English and Vietnamese**, switchable at runtime.
+
+On phones and small desktop windows the layout reflows: the left tool strip
+becomes a horizontal rail on top, the right panel becomes a collapsible
+bottom sheet (it auto-collapses on the homepage so the hero is never
+covered), and the top bar compacts to icon-only controls.
+
+---
+
 ## Screenshots
 
 All captures below are from the running app (dark theme unless noted).
 
-| View | Preview | What it shows |
-|---|---|---|
-| **Landing / empty state** | ![Landing](docs/01-landing.png) | The atmospheric video hero with the condensed headline and drag-drop panel. |
-| **Single comparison (side-by-side)** | ![Compare side](docs/02-compare-side.png) | Original vs cutout in the two-up grid with the size/time stats strip. |
-| **Comparison (slider)** | ![Compare slider](docs/03-compare-slider.png) | The draggable before/after divider mid-sweep. |
-| **AI panel** | ![AI panel](docs/04-ai-panel.png) | Model picker, max-edge slider, alpha matting expanded, API status dot. |
-| **Adjust panel** | ![Adjust panel](docs/05-adjust-panel.png) | Brightness/contrast/saturation/hue/blur/sharpen + background + format + quality. |
-| **Presets** | ![Presets](docs/06-presets.png) | The five preset cards with their parameter chips. |
-| **Batch queue** | ![Batch](docs/07-batch.png) | Multi-file queue with per-file status chips and the ZIP action. |
-| **Export modal** | ![Export](docs/08-export.png) | Format/quality/scale/background controls and the checkerboard preview. |
-| **Region erase** | ![Region erase](docs/08b-region-erase.png) | The Erase panel where rectangles are drawn over leftover background. |
-| **Workspace canvas** | ![Workspace](docs/09-workspace.png) | Fabric.js canvas with the floating toolbar and zoom readout. |
-| **Processing overlay** | ![Processing](docs/10-processing.png) | Neural Scan with the progress bar and cancel button. |
-| **Light theme** | ![Light](docs/11-light.png) | The cream-paper light variant (shown here in Vietnamese). |
-| **Settings / account** | ![Settings](docs/12-settings.png) | Theme, language, sync export, clear data, about block. |
+| # | View | Preview | What it shows |
+|---|---|---|---|
+| 01 | Landing / empty state | ![Landing](docs/01-landing.png) | The atmospheric video hero with the condensed headline and drag-drop panel. |
+| 02 | Single comparison (side-by-side) | ![Compare side](docs/02-compare-side.png) | Original vs cutout in the two-up grid with the size/time stats strip. |
+| 03 | Comparison (slider) | ![Compare slider](docs/03-compare-slider.png) | The draggable before/after divider mid-sweep. |
+| 04 | AI panel | ![AI panel](docs/04-ai-panel.png) | Model picker, max-edge slider, alpha matting expanded, API status dot. |
+| 05 | Adjust panel | ![Adjust panel](docs/05-adjust-panel.png) | Brightness/contrast/saturation/hue/blur/sharpen + background + format + quality. |
+| 06 | Presets | ![Presets](docs/06-presets.png) | The five preset cards with their parameter chips. |
+| 07 | Batch queue | ![Batch](docs/07-batch.png) | Multi-file queue with per-file status chips and the ZIP action. |
+| 08 | Region erase | ![Region erase](docs/08b-region-erase.png) | The Erase panel where rectangles are drawn over leftover background. |
+| 09 | Workspace canvas | ![Workspace](docs/09-workspace.png) | Fabric.js canvas with the floating toolbar and zoom readout. |
+| 10 | Workspace tools | ![Workspace tools](docs/10-workspace-tools.png) | The brush tool panel with colour, size, opacity and a live stroke preview. |
+| 11 | Layers | ![Layers](docs/11-layers.png) | Base cutout layer with visibility, opacity and reorder controls. |
+| 12 | History | ![History](docs/12-history.png) | Timestamped timeline of uploads, runs, presets and exports. |
+| 13 | Export modal | ![Export](docs/13-export.png) | Format/quality/scale/background controls and the checkerboard preview. |
+| 14 | Auth modal | ![Auth](docs/14-auth.png) | Local account sign-in and creation. |
+| 15 | Processing overlay | ![Processing](docs/10-processing.png) | Neural Scan with the progress bar and cancel button. |
+| 16 | Light theme | ![Light](docs/11-light.png) | The cream-paper light variant (shown here in Vietnamese). |
+| 17 | Settings / account | ![Settings](docs/12-settings.png) | Theme, language, sync export, clear data, about block. |
 
 ```
 docs/
@@ -246,12 +436,16 @@ docs/
 ├── 05-adjust-panel.png
 ├── 06-presets.png
 ├── 07-batch.png
-├── 08-export.png
 ├── 08b-region-erase.png
 ├── 09-workspace.png
 ├── 10-processing.png
+├── 10-workspace-tools.png
 ├── 11-light.png
-└── 12-settings.png
+├── 11-layers.png
+├── 12-settings.png
+├── 12-history.png
+├── 13-export.png
+└── 14-auth.png
 ```
 
 ---

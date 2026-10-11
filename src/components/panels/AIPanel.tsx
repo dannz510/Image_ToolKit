@@ -43,7 +43,7 @@ export function AIPanel() {
           onChange={(alphaMatting) => setOptions({ alphaMatting })}
         />
         {options.alphaMatting && (
-          <div className="space-y-2 rounded-lg border border-bg-border bg-bg-primary/50 p-3">
+          <div className="space-y-2 rounded-xl border border-bg-border/30 bg-bg-primary/30 mica p-3">
             <SliderRow
               label={t('ai.fgThreshold')}
               value={options.fgThreshold}
@@ -72,7 +72,7 @@ export function AIPanel() {
       <section className="space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="label-caps">{t('ai.apiStatus')}</h3>
-          <button type="button" onClick={checkApi} className="btn-ghost !px-2 !py-1 text-[10px]">
+          <button type="button" onClick={checkApi} className="btn-ghost !px-2 !py-1 text-[10px] glow-hover">
             {t('ai.apiCheck')}
           </button>
         </div>

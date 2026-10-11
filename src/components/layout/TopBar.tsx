@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useStudio } from '../../contexts/StudioContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -15,42 +15,57 @@ const VIEWS = [
 ] as const;
 
 export function TopBar() {
-  const { viewMode, setViewMode, files, results, apiOnline, checkApi, cancelProcessing, isProcessing } =
+  const { viewMode, setViewMode, files, results, apiOnline, checkApi, cancelProcessing, isProcessing, clearFiles, addFiles } =
     useStudio();
   const { t, lang, setLang } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [authOpen, setAuthOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
 
+  /** Logo = home: drop back to the empty landing state. */
+  const goHome = () => {
+    clearFiles();
+    setViewMode('single');
+  };
+
   return (
-    <header className="relative z-30 flex h-14 items-center gap-3 border-b border-bg-border bg-bg-secondary/80 px-3 backdrop-blur-md">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5">
-        <img src="/favicon.svg" alt="" className="h-8 w-8" />
-        <div className="leading-none">
-          <p className="font-display text-[15px] font-extrabold uppercase tracking-[0.08em] text-text-primary">
+    <header className="relative z-30 flex h-14 items-center gap-1 overflow-x-auto border-b border-bg-border/40 bg-bg-secondary/45 px-2.5 backdrop-blur-md sm:gap-2 sm:px-3">
+      {/* Brand (click = home) */}
+      <button
+        type="button"
+        onClick={goHome}
+        className="topnav-btn flex-shrink-0 items-center gap-2 rounded-xl px-1.5 py-1 text-left text-text-secondary transition-all duration-200 ease-out hover:bg-bg-tertiary hover:text-text-primary"
+        aria-label={t('nav.home')}
+        title={t('nav.home')}
+      >
+        <span className="topnav-home-icon-only inline-flex h-8 w-8 shrink-0 items-center justify-center">
+          <img src="/favicon.svg" alt="" className="h-8 w-8 drop-shadow-[0_0_8px_rgba(0,0,0,0.3)]" onError={(e) => { const img = e.currentTarget as HTMLImageElement; img.onerror = null; img.src = '/favicon.ico'; }} />
+        </span>
+        <span className="topnav-home-text text-left leading-none">
+          <span className="block font-display text-[15px] font-extrabold uppercase tracking-[0.08em] text-text-primary sm:text-[14px]">
             {t('app.name')}
-          </p>
-          <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.22em] text-text-muted">
+          </span>
+          <span className="mt-0.5 hidden font-mono text-[9px] uppercase tracking-[0.22em] text-text-muted lg:inline">
             {t('app.tagline')}
-          </p>
-        </div>
-      </div>
+          </span>
+        </span>
+      </button>
 
       <div className="mx-1 hidden h-8 w-px bg-bg-border sm:block" />
 
       {/* View switcher */}
-      <nav className="flex items-center gap-1 rounded-lg bg-bg-primary p-1" aria-label={t('nav.menu')}>
+      <nav className="topnav-btn flex-shrink-0 flex items-center gap-1 rounded-xl bg-bg-primary/60 p-1 backdrop-blur-md" aria-label={t('nav.menu')}>
         {VIEWS.map((view) => (
           <button
             key={view.id}
             type="button"
             onClick={() => setViewMode(view.id)}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors ${
+            className={`topnav-btn flex-shrink-0 items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-semibold sm:px-2.5 uppercase tracking-wider transition-all duration-200 ease-out ${
               viewMode === view.id
-                ? 'bg-accent-primary text-white shadow-glow-sm'
+                ? 'bg-accent-primary text-white shadow-glow animate-glow'
                 : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
             }`}
             aria-current={viewMode === view.id}
@@ -67,7 +82,7 @@ export function TopBar() {
       <button
         type="button"
         onClick={checkApi}
-        className="hidden items-center gap-2 rounded-md border border-bg-border px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-secondary transition-colors hover:border-accent-primary/50 hover:text-text-primary md:flex"
+        className="topnav-btn hidden shrink-0 items-center gap-2 rounded-xl border border-bg-border/50 bg-bg-primary/40 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-secondary transition-all duration-200 ease-out hover:border-accent-primary/50 hover:bg-bg-tertiary hover:text-text-primary md:flex"
         title={t('ai.apiHint')}
       >
         <span
@@ -86,22 +101,22 @@ export function TopBar() {
       <button
         type="button"
         onClick={() => setLang(lang === 'en' ? 'vi' : 'en')}
-        className="toolbar-btn font-mono text-[11px] font-semibold uppercase"
+        className="topnav-btn toolbar-btn font-mono text-[11px] font-semibold uppercase"
         aria-label={t('nav.language')}
         title={t('nav.language')}
       >
         {lang === 'en' ? 'EN' : 'VI'}
       </button>
 
-      {/* Theme */}
+      {/* Theme: show the mode you would switch TO. */}
       <button
         type="button"
         onClick={toggleTheme}
-        className="toolbar-btn"
+        className="topnav-btn toolbar-btn"
         aria-label={t(theme === 'dark' ? 'nav.theme.light' : 'nav.theme.dark')}
         title={t(theme === 'dark' ? 'nav.theme.light' : 'nav.theme.dark')}
       >
-        <Icon name={theme === 'dark' ? 'star' : 'palette'} size={16} />
+        <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} />
       </button>
 
       {/* Export */}
@@ -109,7 +124,7 @@ export function TopBar() {
         type="button"
         onClick={() => setExportOpen(true)}
         disabled={!results.length}
-        className="toolbar-btn disabled:opacity-40"
+        className="topnav-btn toolbar-btn disabled:opacity-40"
         aria-label={t('top.export')}
         title={t('top.export')}
       >
@@ -120,14 +135,41 @@ export function TopBar() {
       <button
         type="button"
         onClick={() => (user ? setSettingsOpen(true) : setAuthOpen(true))}
-        className="flex items-center gap-2 rounded-md border border-bg-border px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary transition-colors hover:border-accent-primary/50 hover:text-text-primary"
+        className="topnav-btn flex-shrink-0 items-center gap-2 rounded-xl border border-bg-border/50 bg-bg-primary/40 px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-secondary transition-all duration-200 ease-out hover:border-accent-primary/50 hover:bg-bg-tertiary hover:text-text-primary"
       >
         <Icon name="shield" size={14} />
         <span className="hidden lg:inline">{user ? user.name : t('nav.login')}</span>
       </button>
 
+      {/* Add image - available in EVERY view, not just the empty state.
+          Without this the only way to load a second file is to click Home. */}
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        className="topnav-btn btn-secondary !px-2.5 !py-1.5 text-xs"
+        aria-label={t('top.newFile')}
+        title={t('top.newFile')}
+      >
+        <Icon name="plus" size={14} />
+        <span className="hidden lg:inline">{t('top.newFile')}</span>
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,image/tiff"
+        multiple
+        className="file-input-offscreen"
+        aria-label={t('top.newFile')}
+        onChange={(e) => {
+          if (e.target.files?.length) void addFiles(Array.from(e.target.files), true);
+          window.setTimeout(() => {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }, 0);
+        }}
+      />
+
       {isProcessing && (
-        <button type="button" onClick={cancelProcessing} className="btn-danger !px-3 !py-1.5 text-xs">
+        <button type="button" onClick={cancelProcessing} className="topnav-btn btn-danger !px-3 !py-1.5 text-xs">
           {t('process.cancel')}
         </button>
       )}

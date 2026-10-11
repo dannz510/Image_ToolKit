@@ -6,6 +6,7 @@ import { Icon } from '../ui/Icon';
 import { SelectRow } from '../ui/Fields';
 import { clearAllData, currentUser, exportSyncFile, type PublicAccount } from '../../services/auth';
 import { downloadBlob } from '../../services/zip';
+import { unregisterServiceWorker } from '../../utils/registerSW';
 import { useToast } from '../../utils/toast';
 
 const APP_VERSION = '2.0.0';
@@ -28,6 +29,8 @@ export function SettingsModal({
 
   const handleClear = async () => {
     await clearAllData();
+    // A wiped profile must not survive inside the offline cache.
+    await unregisterServiceWorker();
     success('settings.cleared');
     setConfirmClear(false);
     onClose();

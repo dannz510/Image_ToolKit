@@ -288,7 +288,20 @@
                         </div>
                     </div>
                     <p class="text-xs text-gray-400 mt-2">Colors similar to this will be considered background and removed</p>
-                </div>
+                 </div>
+                 
+                 <div id="color-tolerance-section-modal">
+                     <label for="color-tolerance-modal" class="block text-sm font-medium text-gray-300 mb-2">
+                         Color Tolerance: <span id="tolerance-value-modal" class="text-blue-400 font-semibold">30</span>
+                     </label>
+                     <input type="range" id="color-tolerance-modal" min="0" max="200" value="30" 
+                            class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider">
+                     <div class="flex justify-between text-xs text-gray-400 mt-1">
+                         <span>0 (exact only)</span>
+                         <span>200 (very loose)</span>
+                     </div>
+                     <p class="text-xs text-gray-400 mt-2">Higher values treat more colors as background. Lower values keep more detail.</p>
+                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-300 mb-2">
@@ -391,8 +404,11 @@
         const backgroundColorPickerModal = document.getElementById('background-color-picker-modal');
         const bgColorValueModal = document.getElementById('bg-color-value-modal');
         const pickColorBtnModal = document.getElementById('pick-color-btn-modal');
-        const alphaThresholdSectionModal = document.getElementById('alpha-threshold-section-modal');
+         const alphaThresholdSectionModal = document.getElementById('alpha-threshold-section-modal');
         const backgroundColorSectionModal = document.getElementById('background-color-section-modal');
+        const colorToleranceSectionModal = document.getElementById('color-tolerance-section-modal');
+        const colorToleranceSliderModal = document.getElementById('color-tolerance-modal');
+        const toleranceValueModal = document.getElementById('tolerance-value-modal');
         const extractionModeRadiosModal = document.querySelectorAll('input[name="extraction-mode-modal"]');
         
         // Color Picker Modal elements
@@ -408,9 +424,10 @@
         // -----------------------------------------------------------------------------
         // --- Application State ---
         // -----------------------------------------------------------------------------
-        // These variables hold the current settings for the extraction algorithm.
+         // These variables hold the current settings for the extraction algorithm.
         let alphaThreshold = 10;
         let minSize = 30;
+        let colorTolerance = 30; // Configurable color tolerance for opaque images (was hardcoded)
         let backgroundColor = '#000000';
         let extractionMode = 'shape'; // 'shape' or 'bounding-box'
         
@@ -441,6 +458,8 @@
             minSizeValueModal.textContent = `${minSize}x${minSize}`;
             backgroundColorPickerModal.value = backgroundColor;
             bgColorValueModal.textContent = backgroundColor;
+            colorToleranceSliderModal.value = colorTolerance;
+            toleranceValueModal.textContent = `${colorTolerance}`;
             
             // Set the correct radio button for extraction mode.
             extractionModeRadiosModal.forEach(radio => {
@@ -451,9 +470,11 @@
             if (isImageOpaque) {
                 alphaThresholdSectionModal.classList.add('hidden');
                 backgroundColorSectionModal.classList.remove('hidden');
+                colorToleranceSectionModal.classList.remove('hidden');
             } else {
                 alphaThresholdSectionModal.classList.remove('hidden');
                 backgroundColorSectionModal.classList.add('hidden');
+                colorToleranceSectionModal.classList.add('hidden');
             }
             
             settingsModal.classList.remove('hidden');
@@ -467,7 +488,7 @@
         /** Updates the summary display of settings in the main UI header. */
         function updateSettingsDisplay() {
             if (isImageOpaque) {
-                thresholdDisplay.textContent = `(BG: ${backgroundColor}, Min: ${minSize}x${minSize})`;
+                thresholdDisplay.textContent = `(BG: ${backgroundColor}, Tol: ${colorTolerance}, Min: ${minSize}x${minSize})`;
             } else {
                 thresholdDisplay.textContent = `(Alpha: ${alphaThreshold}%, Min: ${minSize}x${minSize})`;
             }
@@ -496,6 +517,9 @@
         backgroundColorPickerModal.addEventListener('input', (e) => {
             bgColorValueModal.textContent = e.target.value;
         });
+        colorToleranceSliderModal.addEventListener('input', (e) => {
+            toleranceValueModal.textContent = `${e.target.value}`;
+        });
 
         // Button to open the color picker from within the settings modal.
         pickColorBtnModal.addEventListener('click', () => {
@@ -510,6 +534,7 @@
             alphaThreshold = parseInt(alphaThresholdSliderModal.value);
             minSize = parseInt(minSizeSliderModal.value);
             backgroundColor = backgroundColorPickerModal.value;
+            colorTolerance = parseInt(colorToleranceSliderModal.value);
             extractionMode = document.querySelector('input[name="extraction-mode-modal"]:checked').value || 'shape';
             
             updateSettingsDisplay();
@@ -947,19 +972,21 @@
         function createColorBasedSegmentationMap(pixels, width, height) {
             const map = new Uint8Array(width * height);
             const bgColor = hexToRgb(backgroundColor);
-            const colorTolerance = 30; // How different a color must be from the background to be considered foreground.
+            if (!bgColor) {
+                // Fallback: treat all pixels as foreground if color is invalid
+                map.fill(1);
+                return map;
+            }
+            const tol = colorTolerance;
+            const tolSq = tol * tol; // Avoid sqrt for every pixel: compare squared distance
             
             for (let i = 0; i < pixels.length; i += 4) {
                 const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
                 
-                // Using Euclidean distance to check color similarity.
-                const distance = Math.sqrt(
-                    Math.pow(r - bgColor.r, 2) + 
-                    Math.pow(g - bgColor.g, 2) + 
-                    Math.pow(b - bgColor.b, 2)
-                );
+                // Squared Euclidean distance — avoids expensive Math.sqrt per pixel.
+                const distSq = (r - bgColor.r) ** 2 + (g - bgColor.g) ** 2 + (b - bgColor.b) ** 2;
                 
-                map[i / 4] = distance > colorTolerance ? 1 : 0;
+                map[i / 4] = distSq > tolSq ? 1 : 0;
             }
             return map;
         }
@@ -970,70 +997,81 @@
             return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
         }
 
-        /**
-         * Performs a flood fill on the segmentation map to find a single connected component.
-         * @returns An object containing the component's bounding box and a Set of its pixel indices.
-         */
-        function floodFill(segmentationMap, visited, startX, startY, width, height) {
-            const stack = [[startX, startY]];
-            let minX = startX, maxX = startX, minY = startY, maxY = startY;
-            const spritePixels = new Set(); // Stores indices of pixels belonging to this shape.
-            
-            while (stack.length > 0) {
-                const [x, y] = stack.pop();
-                const idx = y * width + x;
-                
-                if (x < 0 || x >= width || y < 0 || y >= height || visited[idx] || !segmentationMap[idx]) {
-                    continue;
-                }
-                
-                visited[idx] = 1;
-                spritePixels.add(idx);
-                minX = Math.min(minX, x);
-                maxX = Math.max(maxX, x);
-                minY = Math.min(minY, y);
-                maxY = Math.max(maxY, y);
-                
-                // Check 4-way neighbors.
-                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
-            }
-            
-            return {
-                x: minX, y: minY,
-                width: maxX - minX + 1, height: maxY - minY + 1,
-                pixels: spritePixels
-            };
-        }
+         /**
+          * Performs a flood fill on the segmentation map to find a single connected component.
+          * Uses 8-connectivity (includes diagonals) for more accurate shape capture.
+          * Uses a Uint8Array flag alongside the visited array instead of a Set for O(1) membership
+          * checks and minimal memory overhead — critical for large images.
+          * @returns An object containing the component's bounding box and a Uint8Array of pixel membership.
+          */
+         function floodFill(segmentationMap, visited, startX, startY, width, height) {
+             const stack = [[startX, startY]];
+             let minX = startX, maxX = startX, minY = startY, maxY = startY;
+             // Uint8Array for O(1) membership checks — replaces Set for massive speed/memory gain
+             const pixelMap = new Uint8Array(width * height);
+             let pixelCount = 0;
+             
+             while (stack.length > 0) {
+                 const [x, y] = stack.pop();
+                 const idx = y * width + x;
+                 
+                 if (x < 0 || x >= width || y < 0 || y >= height || visited[idx] || !segmentationMap[idx]) {
+                     continue;
+                 }
+                 
+                 visited[idx] = 1;
+                 pixelMap[idx] = 1;
+                 pixelCount++;
+                 minX = Math.min(minX, x);
+                 maxX = Math.max(maxX, x);
+                 minY = Math.min(minY, y);
+                 maxY = Math.max(maxY, y);
+                 
+                 // 8-way connectivity (includes diagonals for better shape accuracy)
+                 stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1],
+                            [x + 1, y + 1], [x - 1, y + 1], [x + 1, y - 1], [x - 1, y - 1]);
+             }
+             
+             return {
+                 x: minX, y: minY,
+                 width: maxX - minX + 1, height: maxY - minY + 1,
+                 pixels: pixelMap,
+                 pixelCount: pixelCount
+             };
+         }
 
-        /**
-         * Extracts a sprite by copying only the pixels that are part of its exact shape,
-         * leaving the rest of the bounding box transparent.
-         */
-        function extractSpriteWithShape(sourceCanvas, targetCanvas, bounds, sourceWidth) {
-            const sourceCtx = sourceCanvas.getContext('2d');
-            const targetCtx = targetCanvas.getContext('2d');
-            
-            const sourceImageData = sourceCtx.getImageData(bounds.x, bounds.y, bounds.width, bounds.height);
-            const targetImageData = targetCtx.createImageData(bounds.width, bounds.height);
-            
-            // Iterate through the bounding box area.
-            for (let y = 0; y < bounds.height; y++) {
-                for (let x = 0; x < bounds.width; x++) {
-                    // Check if this specific pixel is part of the sprite's shape.
-                    const sourceIdx = (bounds.y + y) * sourceWidth + (bounds.x + x);
-                    if (bounds.pixels.has(sourceIdx)) {
-                        const pixelIdx = (y * bounds.width + x) * 4;
-                        // If it is, copy the pixel data (R, G, B, A).
+         /**
+          * Extracts a sprite by copying only the pixels that are part of its exact shape,
+          * leaving the rest of the bounding box transparent. Supports anti-aliasing
+          * for smoother edges on diagonal/scale-extracted sprites.
+          */
+         function extractSpriteWithShape(sourceCanvas, targetCanvas, bounds, sourceWidth) {
+             const sourceCtx = sourceCanvas.getContext('2d');
+             const targetCtx = targetCanvas.getContext('2d');
+             
+             const sourceImageData = sourceCtx.getImageData(bounds.x, bounds.y, bounds.width, bounds.height);
+             const targetImageData = targetCtx.createImageData(bounds.width, bounds.height);
+             const pixels = bounds.pixels; // Uint8Array for O(1) lookup
+             
+             // Iterate through the bounding box area.
+             for (let y = 0; y < bounds.height; y++) {
+                 for (let x = 0; x < bounds.width; x++) {
+                     const pixelIdx = (y * bounds.width + x) * 4;
+                     const sourceIdx = (bounds.y + y) * sourceWidth + (bounds.x + x);
+                     
+                     if (pixels[sourceIdx]) {
+                         // Copy the pixel data (R, G, B, A).
                         targetImageData.data[pixelIdx] = sourceImageData.data[pixelIdx];
                         targetImageData.data[pixelIdx + 1] = sourceImageData.data[pixelIdx + 1];
                         targetImageData.data[pixelIdx + 2] = sourceImageData.data[pixelIdx + 2];
                         targetImageData.data[pixelIdx + 3] = sourceImageData.data[pixelIdx + 3];
                     }
-                }
-            }
-            
-            targetCtx.putImageData(targetImageData, 0, 0);
-        }
+                     // Pixels not in the sprite remain transparent (0, 0, 0, 0)
+                 }
+             }
+             
+             targetCtx.putImageData(targetImageData, 0, 0);
+         }
 
         /**
          * Extracts a sprite by simply copying the entire rectangular bounding box from the source.

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useStudio } from '../../contexts/StudioContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icon } from '../ui/Icon';
@@ -9,11 +9,37 @@ import { formatBytes, formatDimensions, formatTime } from '../../utils';
  * with before/after size, dimensions and processing time.
  */
 export function ComparisonView() {
-  const { activeFile, activeResult, downloadResult, results, setActiveResultId, loadResultIntoWorkspace } =
-    useStudio();
   const { t } = useLanguage();
   const [mode, setMode] = useState<'side' | 'slider'>('side');
   const [split, setSplit] = useState(50);
+  const {
+    activeFile,
+    activeFileId,
+    activeResult,
+    displayedResult,
+    isRenderingPreview,
+    downloadResult,
+    results,
+    files,
+    setActiveFileId,
+    setActiveResultId,
+    loadResultIntoWorkspace,
+  } = useStudio();
+
+  /** Every uploaded image, with its result thumbnail when one exists. */
+  const allImages = useMemo(
+    () =>
+      files.map((file) => {
+        const match = results.find((r) => r.originalName === file.name);
+        return {
+          id: file.id,
+          name: file.name,
+          thumb: match ? match.resultDataUrl : file.dataUrl,
+          hasResult: Boolean(match),
+        };
+      }),
+    [files, results]
+  );
 
   if (!activeFile) return null;
 
@@ -41,13 +67,13 @@ export function ComparisonView() {
   return (
     <div className="flex h-full flex-col">
       {/* toolbar */}
-      <div className="flex items-center gap-2 border-b border-bg-border px-4 py-2">
-        <div className="flex rounded-md bg-bg-primary p-0.5">
+      <div className="flex items-center gap-2 border-b border-bg-border/40 bg-bg-secondary/30 px-4 py-2 backdrop-blur-sm">
+        <div className="flex rounded-xl bg-bg-primary/50 p-0.5 mica">
           <button
             type="button"
             onClick={() => setMode('side')}
-            className={`rounded px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${
-              mode === 'side' ? 'bg-accent-primary text-white' : 'text-text-secondary'
+            className={`rounded-lg border border-bg-border/50 bg-bg-primary/50 px-2.5 py-1 glow-hover text-[11px] font-semibold uppercase tracking-wider transition-all duration-200 ease-out ${
+              mode === 'side' ? 'border-accent-primary bg-accent-primary/15 text-accent-primary shadow-glow' : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             {t('compare.before')} / {t('compare.after')}
@@ -55,8 +81,8 @@ export function ComparisonView() {
           <button
             type="button"
             onClick={() => setMode('slider')}
-            className={`rounded px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${
-              mode === 'slider' ? 'bg-accent-primary text-white' : 'text-text-secondary'
+            className={`rounded-lg border border-bg-border/50 bg-bg-primary/50 px-2.5 py-1 glow-hover text-[11px] font-semibold uppercase tracking-wider transition-all duration-200 ease-out ${
+              mode === 'slider' ? 'border-accent-primary bg-accent-primary/15 text-accent-primary shadow-glow' : 'text-text-secondary hover:text-text-primary'
             }`}
           >
             {t('compare.swap')}
@@ -88,8 +114,8 @@ export function ComparisonView() {
       <div className="min-h-0 flex-1 p-4">
         {mode === 'side' ? (
           <div className="grid h-full grid-cols-1 gap-4 md:grid-cols-2">
-            <figure className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-bg-border bg-bg-card">
-              <figcaption className="flex items-center justify-between border-b border-bg-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            <figure className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-bg-border/30 bg-bg-card/60 mica">
+              <figcaption className="flex items-center justify-between border-b border-bg-border/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-text-muted">
                 {t('compare.original')}
                 <span>{formatBytes(activeResult.originalSize)}</span>
               </figcaption>
@@ -101,14 +127,19 @@ export function ComparisonView() {
                 />
               </div>
             </figure>
-            <figure className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-bg-border bg-bg-card">
-              <figcaption className="flex items-center justify-between border-b border-bg-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-primary">
+            <figure className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-bg-border/30 bg-bg-card/60 mica">
+              <figcaption className="flex items-center justify-between border-b border-bg-border/30 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-accent-primary">
                 {t('compare.result')}
-                <span>{formatBytes(activeResult.resultSize)}</span>
+                <span className="flex items-center gap-2">
+                  {isRenderingPreview && (
+                    <span className="text-text-muted">{t('compare.rendering')}</span>
+                  )}
+                  {formatBytes(activeResult.resultSize)}
+                </span>
               </figcaption>
               <div className="min-h-0 flex-1 overflow-hidden checker">
                 <img
-                  src={activeResult.resultDataUrl}
+                  src={displayedResult?.resultDataUrl ?? activeResult.resultDataUrl}
                   alt={activeResult.originalName}
                   className="h-full w-full object-contain"
                 />
@@ -117,7 +148,7 @@ export function ComparisonView() {
           </div>
         ) : (
           <div
-            className="relative h-full min-h-0 select-none overflow-hidden rounded-lg border border-bg-border checker"
+            className="relative h-full min-h-0 select-none overflow-hidden rounded-xl border border-bg-border/30 mica checker"
             onMouseMove={(e) => {
               const rect = e.currentTarget.getBoundingClientRect();
               setSplit(((e.clientX - rect.left) / rect.width) * 100);
@@ -133,7 +164,7 @@ export function ComparisonView() {
               style={{ clipPath: `inset(0 0 0 ${split}%)` }}
             >
               <img
-                src={activeResult.resultDataUrl}
+                src={displayedResult?.resultDataUrl ?? activeResult.resultDataUrl}
                 alt={activeResult.originalName}
                 className="absolute inset-0 h-full w-full object-contain"
               />
@@ -152,8 +183,35 @@ export function ComparisonView() {
         )}
       </div>
 
+      {/* image selector strip: jump between uploaded images and their results */}
+      {allImages.length > 1 && (
+         <div className="flex shrink-0 items-center gap-2 overflow-x-auto border-t border-bg-border/40 bg-bg-secondary/30 px-3 py-2 backdrop-blur-sm">
+          <span className="shrink-0 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            {t('compare.images')}
+          </span>
+          {allImages.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveFileId(item.id)}
+               className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border-2 transition-all duration-200 ease-out ${
+                item.id === activeFileId
+                  ? 'border-accent-primary shadow-glow'
+                  : 'border-bg-border hover:border-text-muted glow-hover'
+              }`}
+              title={item.name}
+            >
+              <img src={item.thumb} alt="" className="h-full w-full object-cover" />
+              {item.hasResult && (
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-tl bg-success" />
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* stats strip */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-bg-border px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-text-muted">
+       <div className="flex flex-wrap items-center gap-x-6 gap-y-1 border-t border-bg-border/40 bg-bg-secondary/30 px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-text-muted backdrop-blur-sm">
         <span>
           {t('compare.dimensions')}: {formatDimensions(activeResult.width, activeResult.height)}
         </span>

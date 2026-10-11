@@ -88,12 +88,57 @@ export interface Toast {
 export type ViewMode = 'single' | 'batch' | 'workspace';
 export type ToolMode = 'select' | 'crop' | 'brush' | 'eraser' | 'text' | 'shape';
 
+/**
+ * Brush presets. Each one changes the stroke geometry, which is what makes a
+ * brush feel like a brush rather than "a line of N pixels".
+ */
+export type BrushType = 'brush' | 'pen' | 'pencil' | 'marker' | 'airbrush';
+
 export interface BrushSettings {
   size: number;
   opacity: number;
   color: string;
-  hardness: number;
-  flow: number;
+  /** Which brush preset is active - drives the stroke texture. */
+  type: BrushType;
+}
+
+/** Stroke geometry per brush type. */
+export const BRUSH_PROFILES: Record<
+  BrushType,
+  {
+    label: string;
+    /** Multiplies the requested size to get the drawn brush width. */
+    widthScale: number;
+    /** Number of parallel jittered strokes drawn per segment. */
+    passes: number;
+    /** Random offset of each pass, as a fraction of the width. */
+    jitter: number;
+    /** Alpha of the main stroke. */
+    alpha: number;
+    /** Taper the ends of a stroke (pen/pencil feel). */
+    taper: boolean;
+  }
+> = {
+  brush: { label: 'Brush', widthScale: 1, passes: 1, jitter: 0, alpha: 1, taper: false },
+  pen: { label: 'Pen', widthScale: 0.45, passes: 1, jitter: 0, alpha: 1, taper: true },
+  pencil: { label: 'Pencil', widthScale: 0.3, passes: 5, jitter: 0.55, alpha: 0.22, taper: false },
+  marker: { label: 'Marker', widthScale: 1.6, passes: 1, jitter: 0.04, alpha: 0.38, taper: false },
+  airbrush: { label: 'Airbrush', widthScale: 2.4, passes: 3, jitter: 0.7, alpha: 0.14, taper: false },
+};
+
+export interface ShapeSettings {
+  kind: 'rect' | 'ellipse' | 'line' | 'arrow';
+  fill: string | 'none';
+  stroke: string;
+  strokeWidth: number;
+}
+
+export interface TextSettings {
+  fontFamily: 'display' | 'ui' | 'mono';
+  fontSize: number;
+  fontWeight: 400 | 700;
+  color: string;
+  align: 'left' | 'center' | 'right';
 }
 
 export interface CropBox {
@@ -104,12 +149,26 @@ export interface CropBox {
 }
 
 /** A user-drawn erase rectangle (coordinates in the image's own pixel space). */
+/**
+ * A manual erase region in the image's own pixel space.
+ *
+ * Two shapes are supported:
+ *  - `rect`   - the classic drag a box (x/y/width/height)
+ *  - `stroke` - a freehand brush: an ordered polyline plus a radius, which is
+ *               what feels natural for cleaning up leftovers on a cut-out
+ */
 export interface Region {
   id: string;
+  /** Brush strokes are the default; rect stays available for rough blocks. */
+  kind?: 'rect' | 'stroke';
   x: number;
   y: number;
   width: number;
   height: number;
+  /** Normalised (0..1) polyline points, so a stroke survives any resize. */
+  points?: { x: number; y: number }[];
+  /** Brush radius as a fraction of the image width. */
+  radius?: number;
 }
 
 export const DEFAULT_PROCESSING_OPTIONS: ProcessingOptions = {
@@ -140,8 +199,16 @@ export const DEFAULT_COLOR_ADJUSTMENTS: ColorAdjustments = {
   exposure: 0,
 };
 
+/**
+ * Swatch values for the custom-colour picker.
+ *
+ * `transparent` is not a valid value for `<input type="color">` (the browser
+ * rejects anything that is not a 7-digit hex), so it maps to white: the
+ * picker is only a convenience for choosing a solid colour, and the actual
+ * transparent option lives in the dropdown above it.
+ */
 export const BACKGROUND_COLORS: Record<string, string> = {
-  transparent: 'transparent',
+  transparent: '#FFFFFF',
   white: '#FFFFFF',
   black: '#000000',
   slate: '#708090',

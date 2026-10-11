@@ -1,12 +1,16 @@
 import type { CSSProperties } from 'react';
 
 /**
- * Renders one of the bundled SVG icons (src/assets/icons/*.svg) as an <img>.
- * Keeping icons as files means the brand mark stays crisp at any size and
- * participates in the service worker cache.
+ * Renders one of the bundled SVG icons (src/assets/icons/*.svg).
+ *
+ * The icons are drawn with `stroke="currentColor"`, so they are applied as a
+ * CSS mask rather than an <img>: an externally-loaded SVG image cannot inherit
+ * `currentColor` from the page, which is why the icons used to render black in
+ * every theme. Masking them makes them take the surrounding text colour, so
+ * they follow the dark/light tokens automatically.
  */
 
-const modules = import.meta.glob('../assets/icons/*.svg', {
+const modules = import.meta.glob('../../assets/icons/*.svg', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -27,17 +31,33 @@ export interface IconProps {
   title?: string;
 }
 
-export function Icon({ name, size, className = '', title }: IconProps) {
+export function Icon({ name, size = 16, className = '', title }: IconProps) {
   const src = registry[name];
   if (!src) return null;
-  const style: CSSProperties | undefined = size ? { width: size, height: size } : undefined;
+
+  const style: CSSProperties = {
+    display: 'inline-block',
+    width: size,
+    height: size,
+    flexShrink: 0,
+    // The mask paints the icon in the inherited text colour.
+    backgroundColor: 'currentColor',
+    maskImage: `url("${src}")`,
+    WebkitMaskImage: `url("${src}")`,
+    maskSize: 'contain',
+    WebkitMaskSize: 'contain',
+    maskRepeat: 'no-repeat',
+    WebkitMaskRepeat: 'no-repeat',
+    maskPosition: 'center',
+    WebkitMaskPosition: 'center',
+  };
+
   return (
-    <img
-      src={src}
-      alt={title ?? ''}
+    <span
+      role={title ? 'img' : undefined}
+      aria-label={title}
       aria-hidden={title ? undefined : true}
-      draggable={false}
-      className={`shrink-0 select-none ${className}`}
+      className={`inline-block shrink-0 select-none ${className}`}
       style={style}
     />
   );

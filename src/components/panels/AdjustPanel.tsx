@@ -113,7 +113,7 @@ export function AdjustPanel() {
           onChange={(resizeEnabled) => setOptions({ resizeEnabled })}
         />
         {options.resizeEnabled && (
-          <div className="space-y-2 rounded-lg border border-bg-border bg-bg-primary/50 p-3">
+          <div className="space-y-2 rounded-xl border border-bg-border/30 bg-bg-primary/30 mica p-3">
             <div className="grid grid-cols-2 gap-2">
               <Field label={t('adjust.width')} htmlFor="resize-w">
                 <input
@@ -171,7 +171,7 @@ export function AdjustPanel() {
             <button
               key={preset.id}
               type="button"
-              className="btn-secondary !px-2 !py-1.5 text-[11px]"
+              className="btn-secondary !px-2 !py-1.5 text-[11px] glow-active"
               title={preset.description}
               onClick={() => applyPreset(preset)}
             >

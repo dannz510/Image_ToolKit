@@ -9,10 +9,12 @@ Request (multipart/form-data):
     model         string  u2netp (default) | u2net | isnet-general-use |
                           u2net_human_seg | silueta
     max_size      int     longest-edge cap applied before inference (default 1600)
-    alpha_matting bool    true/false - softer edges, slower (default false)
-    fg_threshold  int     alpha matting foreground threshold (default 240)
-    bg_threshold  int     alpha matting background threshold (default 10)
-    erode_size    int     alpha matting erode size (default 10)
+     alpha_matting bool    true/false - softer edges, slower (default true)
+     fg_threshold  int     alpha matting foreground threshold (default 225)
+     bg_threshold  int     alpha matting background threshold (default 10)
+     erode_size    int     alpha matting erode size (default 10)
+     post_refine   bool    post-process alpha mask: blur + morphological ops (default true)
+     premultiply   bool    premultiply alpha channel for correct compositing (default true)
 
 Request (application/octet-stream alternative, same params as query string):
     POST /api/remove_bg?model=u2netp&max_size=1600     (raw image bytes as body)
@@ -72,16 +74,79 @@ def get_session(model: str):
     return _session
 
 
+def premultiply_alpha(rgba: Image.Image) -> Image.Image:
+    """Premultiply the alpha channel so the PNG composites correctly in all viewers."""
+    if rgba.mode != "RGBA":
+        return rgba
+    r, g, b, a = rgba.split()
+    alpha = a.convert("F")
+    r = Image.composite(Image.new("L", r.size, 0), r, Image.merge("L", a.split()[:1]))
+    r = r.point(lambda p, a=alpha: p, mask=a)
+    g = g.point(lambda p, a=alpha: p, mask=a)
+    b = b.point(lambda p, a=alpha: p, mask=a)
+    out = Image.merge("RGBA", (r, g, b, a))
+    return out
+
+
+def refine_alpha_mask(
+    rgba: Image.Image,
+    blur_radius: float = 1.0,
+    dilate_iter: int = 1,
+    erode_iter: int = 0,
+) -> Image.Image:
+    """Post-process the alpha channel for pixel-perfect edges.
+
+    Applies a light Gaussian blur to smooth fringing, then optionally dilates
+    to fill small gaps and erodes to remove noise.  This produces cleaner
+    alpha mattes than rembg alone, especially around fine hair or semi-transparent
+    edges.
+    """
+    if rgba.mode != "RGBA":
+        return rgba
+
+    r, g, b, a = rgba.split()
+    alpha = a
+
+    # --- morphological dilate on alpha ---
+    if dilate_iter > 0:
+        from PIL import ImageFilter
+        dilated = alpha
+        for _ in range(dilate_iter):
+            dilated = dilated.filter(ImageFilter.MaxFilter(3))
+        alpha = dilated
+
+    # --- morphological erode on alpha ---
+    if erode_iter > 0:
+        from PIL import ImageFilter
+        eroded = alpha
+        for _ in range(erode_iter):
+            eroded = eroded.filter(ImageFilter.MinFilter(3))
+        alpha = eroded
+
+    # --- gaussian blur for soft edge blending ---
+    if blur_radius > 0:
+        from PIL import ImageFilter
+        alpha = alpha.filter(ImageFilter.GaussianBlur(blur_radius))
+
+    return Image.merge("RGBA", (r, g, b, alpha))
+
+
 def remove_background(
     image_bytes: bytes,
     model: str = DEFAULT_MODEL,
     max_size: int = DEFAULT_MAX_SIZE,
-    alpha_matting: bool = False,
-    fg_threshold: int = 240,
+    alpha_matting: bool = True,
+    fg_threshold: int = 225,
     bg_threshold: int = 10,
     erode_size: int = 10,
+    post_refine: bool = True,
+    premultiply: bool = True,
 ) -> tuple:
-    """Run background removal. Returns (png_bytes, meta)."""
+    """Run background removal. Returns (png_bytes, meta).
+
+    By default alpha_matting is **enabled** and a post-processing pass refines
+    the alpha channel for crisp, pixel-perfect edges without introducing halo.
+    """
     from PIL import Image, ImageOps
     from rembg import remove
 
@@ -95,6 +160,7 @@ def remove_background(
     input_w, input_h = image.size
     input_bytes = len(image_bytes)
 
+    # --- scale for inference only; we remap alpha back to original resolution ---
     downscaled = False
     longest = max(image.size)
     if max_size and longest > max_size:
@@ -118,7 +184,26 @@ def remove_background(
         alpha_matting_erode_size=erode_size,
     )
 
-    result_image = Image.open(io.BytesIO(output))
+    result_image = Image.open(io.BytesIO(output)).convert("RGBA")
+
+    # --- optional post-processing refinement ---
+    if post_refine:
+        result_image = refine_alpha_mask(
+            result_image,
+            blur_radius=0.8,
+            dilate_iter=1,
+            erode_iter=0,
+        )
+
+    # --- optional alpha premultiplication for correct compositing ---
+    if premultiply:
+        result_image = premultiply_alpha(result_image)
+
+    # --- re-encode ---
+    final_buf = io.BytesIO()
+    result_image.save(final_buf, format="PNG", optimize=True)
+    output = final_buf.getvalue()
+
     out_w, out_h = result_image.size
 
     meta = {
@@ -128,6 +213,9 @@ def remove_background(
         "input_bytes": input_bytes,
         "output_bytes": len(output),
         "downscaled": downscaled,
+        "alpha_matting": alpha_matting,
+        "post_refine": post_refine,
+        "premultiply": premultiply,
         "ms": round((time.time() - started) * 1000, 1),
     }
     return output, meta
@@ -282,10 +370,12 @@ def do_post(h) -> None:
             image_bytes,
             model=model,
             max_size=_to_int(param("max_size", DEFAULT_MAX_SIZE), DEFAULT_MAX_SIZE),
-            alpha_matting=_to_bool(param("alpha_matting", None)),
-            fg_threshold=_to_int(param("fg_threshold", 240), 240),
+            alpha_matting=_to_bool(param("alpha_matting", True)),
+            fg_threshold=_to_int(param("fg_threshold", 225), 225),
             bg_threshold=_to_int(param("bg_threshold", 10), 10),
             erode_size=_to_int(param("erode_size", 10), 10),
+            post_refine=_to_bool(param("post_refine", True)),
+            premultiply=_to_bool(param("premultiply", True)),
         )
     except Exception as exc:  # noqa: BLE001 - surface any failure as JSON
         print(f"[remove_bg] failed on {filename}: {exc}")

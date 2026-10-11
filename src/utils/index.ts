@@ -19,16 +19,35 @@ export function formatDimensions(width: number, height: number): string {
   return `${width}×${height}`;
 }
 
+/**
+ * Decode a `data:` URL into a Blob.
+ *
+ * Preferred over `fetch(dataUrl)` because several engines refuse to fetch
+ * data: URLs, which would make locally-stored images unusable offline.
+ */
 export function dataUrlToBlob(dataUrl: string): Blob {
-  const arr = dataUrl.split(',');
-  const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/png';
-  const bstr = atob(arr[1]);
-  let n = bstr.length;
-  const u8arr = new Uint8Array(n);
-  while (n--) {
-    u8arr[n] = bstr.charCodeAt(n);
+  if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) {
+    throw new Error('invalid data URL');
   }
-  return new Blob([u8arr], { type: mime });
+  const comma = dataUrl.indexOf(',');
+  if (comma === -1) throw new Error('malformed data URL');
+
+  const meta = dataUrl.slice(5, comma);
+  const mime = meta.split(';')[0] || 'image/png';
+  const isBase64 = /;base64/i.test(meta);
+  const payload = dataUrl.slice(comma + 1);
+
+  let bytes: Uint8Array<ArrayBuffer>;
+  if (isBase64) {
+    const binary = atob(payload);
+    bytes = new Uint8Array(new ArrayBuffer(binary.length));
+    for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  } else {
+    const encoded = new TextEncoder().encode(decodeURIComponent(payload));
+    bytes = new Uint8Array(new ArrayBuffer(encoded.length));
+    bytes.set(encoded);
+  }
+  return new Blob([bytes], { type: mime });
 }
 
 export function blobToDataUrl(blob: Blob): Promise<string> {

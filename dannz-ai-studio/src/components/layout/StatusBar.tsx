@@ -35,7 +35,7 @@ export function StatusBar() {
         : t('status.noImage');
 
   return (
-    <footer className="relative z-30 flex h-7 items-center gap-4 border-t border-bg-border bg-bg-secondary/80 px-3 font-mono text-[10px] uppercase tracking-wider text-text-muted backdrop-blur-md">
+    <footer className="relative z-30 flex h-7 items-center gap-4 border-t border-bg-border/40 bg-bg-secondary/45 px-3 font-mono text-[10px] uppercase tracking-wider text-text-muted backdrop-blur-md">
       <span className="flex items-center gap-1.5">
         <span
           className={`h-1.5 w-1.5 rounded-full ${

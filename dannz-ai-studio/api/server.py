@@ -1,14 +1,15 @@
 """
 Local development router for the Dannz AI Studio Python API.
 
-Run both endpoints without Vercel:
+Run every endpoint without Vercel:
 
     python api/server.py
     # GET  http://127.0.0.1:8000/api/health
     # POST http://127.0.0.1:8000/api/remove_bg
+    # POST http://127.0.0.1:8000/api/fetch_image      (same-origin URL import)
 
 The Vite dev server proxies /api -> http://127.0.0.1:8000, so the frontend
-can call /api/remove_bg exactly like it does in production.
+can call these exactly like it does in production.
 """
 
 import os
@@ -17,6 +18,13 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# This router only ever runs on a developer machine (Vercel calls the
+# individual handlers, never this file), so dev mode is unconditional here:
+# localhost origins are allowed and a local image host may be fetched by
+# /api/fetch_image. The link-local/metadata ranges stay blocked regardless.
+os.environ["DANNZ_DEV"] = "1"
+
+import fetch_image  # noqa: E402
 import health  # noqa: E402
 import remove_bg  # noqa: E402
 
@@ -32,6 +40,8 @@ class DevRouter(BaseHTTPRequestHandler):
         path = self.path.split("?")[0].rstrip("/")
         if path == "/api/health":
             (health.do_get if method == "GET" else health.do_post)(self)
+        elif path == "/api/fetch_image":
+            (fetch_image.do_get if method == "GET" else fetch_image.do_post)(self)
         elif path == "/api/remove_bg":
             (remove_bg.do_get if method == "GET" else remove_bg.do_post)(self)
         else:
@@ -60,9 +70,15 @@ class DevRouter(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", "8000"))
+    # Loopback by default. Set HOST=0.0.0.0 explicitly when you need LAN
+    # access (e.g. testing the PWA from a phone) - the dev API has no auth.
+    host = os.environ.get("HOST", "127.0.0.1")
     print("=" * 60)
     print(" Dannz AI Studio - local API")
-    print(f"   health:     http://127.0.0.1:{port}/api/health")
-    print(f"   remove_bg:  http://127.0.0.1:{port}/api/remove_bg")
+    print(f"   health:      http://{host}:{port}/api/health")
+    print(f"   remove_bg:   http://{host}:{port}/api/remove_bg")
+    print(f"   fetch_image: http://{host}:{port}/api/fetch_image")
+    if host == "0.0.0.0":
+        print("   WARNING: bound to all interfaces - no auth, dev only")
     print("=" * 60)
-    ThreadingHTTPServer(("0.0.0.0", port), DevRouter).serve_forever()
+    ThreadingHTTPServer((host, port), DevRouter).serve_forever()

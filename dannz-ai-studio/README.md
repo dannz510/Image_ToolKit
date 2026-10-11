@@ -28,12 +28,14 @@ happens on your machine; only the actual AI inference has a (free) serverless pa
 │  Pipeline        composite · resize · crop · convert · compress · zip        │
 │  Persistence     IndexedDB (images, results, settings, history, accounts)    │
 └──────────────────────────────────────────────────────────────────────────────┘
-                                   │  POST /api/remove_bg
-                                   ▼
+│                                    │  POST /api/remove_bg
+│                                    │  POST /api/fetch_image  (load image from URL)
+│                                    ▼
 ┌─────────────────────────── Serverless (Python) ──────────────────────────────┐
 │  Vercel Function   rembg + onnxruntime, warm ONNX session cache              │
 │  Models            u2netp · u2net · isnet-general-use · u2net_human_seg · …  │
 │  Status            GET /api/health  → model list + cache warm state          │
+│  Remote fetch      server-side download, SSRF-hardened, never browser CORS   │
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -71,9 +73,10 @@ happens on your machine; only the actual AI inference has a (free) serverless pa
 ```
 dannz-ai-studio/
 ├── api/
-│   ├── remove_bg.py          # Vercel serverless background-removal endpoint
+│   ├── remove_bg.py          # POST /api/remove_bg — AI background removal
 │   ├── health.py             # GET /api/health — model list + cache state
-│   ├── server.py             # local dev router for both endpoints
+│   ├── fetch_image.py       # POST /api/fetch_image — server-side image download for "load from URL"
+│   ├── server.py             # local dev router for all three endpoints
 │   └── requirements.txt      # rembg, onnxruntime, pillow, numpy
 ├── public/
 │   ├── favicon.svg           # brand mark (vector)
@@ -171,7 +174,28 @@ Optional extras:
 ```bash
 npm run icons         # regenerate PNG/ICO brand assets with pure Python
 npm run format        # prettier across src/
+npm run lint          # eslint (bugs + hooks rules)
 ```
+
+### 5 — Verify the API endpoints
+
+```bash
+curl http://127.0.0.1:8000/api/health
+# {"status":"ok","models":["u2netp","silueta","u2net_human_seg"],"warm":true}
+
+curl -X POST http://127.0.0.1:8000/api/fetch_image \
+     -H 'Content-Type: application/json' \
+     -d '{"url":"https://example.com/photo.jpg"}' -o photo.jpg
+```
+
+`/api/fetch_image` is what makes "load from URL" work: browsers cannot read
+most cross-origin image responses (no `Access-Control-Allow-Origin`), and the
+app runs with `connect-src 'self'`, so the download happens server-side. That
+endpoint refuses non-`http(s)` URLs, URLs with credentials, non-trivial ports
+(any HTTP method on a public host only), and any host that resolves into
+private/loopback/link-local/metadata ranges — redirects are followed manually
+and every hop re-validated. Responses are capped at 15 MB and their bytes must
+be a real raster image.
 
 ---
 
@@ -200,13 +224,17 @@ vercel --prod     # every push after can auto-deploy from GitHub
 }
 ```
 
-No environment variables are required. Remember the Vercel Hobby limits:
+No environment variables are required. Remember the Vercel plan limits —
+`vercel.json` ships `maxDuration: 30` for the API functions, which a Hobby
+plan caps at its own maximum; if you stay on Hobby, budget for the shorter of
+the two:
 
 | Limit | Value | How the app copes |
 |---|---|---|
-| Function runtime | 10 s | `u2netp` default + client-side pre-downscale to 1600 px |
+| Function runtime | 30 s (capped lower on Hobby) | `u2netp` default + warm model cache + client-side pre-downscale to 1600 px; inference is serialised by a semaphore |
 | Request body | 4.5 MB | `prepareForUpload()` re-encodes oversized images before upload |
 | Model cold start | ~devtime | Weights cached in `/tmp`, session reused while the instance is warm |
+| URL import | network-bound | `/api/fetch_image` uses its own 15 s timeout and 15 MB cap, so a slow host can consume most of the budget |
 
 ### Any static host
 

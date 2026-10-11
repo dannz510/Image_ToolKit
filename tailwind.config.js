@@ -46,6 +46,11 @@ export default {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'scan': 'scan 2s linear infinite',
         'spin-slow': 'spin 2.4s linear infinite',
+        'glow': 'glowPulse 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'glow-fast': 'glowPulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fadeIn 0.45s cubic-bezier(0.33, 0.9, 0.35, 1) forwards',
+        'slide-up': 'slideUp 0.5s cubic-bezier(0.33, 0.9, 0.35, 1) forwards',
+        'pop-in': 'popIn 0.4s cubic-bezier(0.33, 0.9, 0.35, 1) forwards',
       },
       keyframes: {
         riseIn: {
@@ -74,12 +79,35 @@ export default {
           '0%': { transform: 'translateY(-100%)' },
           '100%': { transform: 'translateY(100%)' },
         },
+        glowPulse: {
+          '0%, 100%': {
+            boxShadow: '0 0 0px rgba(214, 82, 58, 0.2), 0 0 8px rgba(214, 82, 58, 0.05)',
+          },
+          '50%': {
+            boxShadow: '0 0 20px rgba(214, 82, 58, 0.5), 0 0 40px rgba(214, 82, 58, 0.25)',
+          },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        popIn: {
+          '0%': { opacity: '0', transform: 'scale(0.9)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
       },
       boxShadow: {
         'glow': '0 0 20px rgba(214, 82, 58, 0.3), 0 0 40px rgba(214, 82, 58, 0.1)',
         'glow-sm': '0 0 10px rgba(214, 82, 58, 0.2)',
+        'glow-lg': '0 0 30px rgba(214, 82, 58, 0.4), 0 0 60px rgba(214, 82, 58, 0.2)',
         'inner-glow': 'inset 0 0 20px rgba(214, 82, 58, 0.1)',
         'card': '0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03)',
+        'mica': '0 8px 32px rgba(0, 0, 0, 0.3)',
+        'mica-light': '0 8px 32px rgba(0, 0, 0, 0.08)',
       },
       backdropBlur: {
         'xs': '2px',
