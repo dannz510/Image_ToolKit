@@ -69,6 +69,7 @@ export function CanvasWorkspace() {
     setCropBox(box)
   );
   const loadedIdRef = useRef<string | null>(null);
+  const loadedCanvasRef = useRef<unknown>(null);
   const applyCropRef = useRef<(() => void) | null>(null);
   // Point the ref at the hook implementation once it exists.
   useEffect(() => {
@@ -78,7 +79,13 @@ export function CanvasWorkspace() {
   // Mount fabric once.
   useEffect(() => {
     if (containerRef.current) initializeCanvas(containerRef.current);
-    return () => disposeCanvas();
+    return () => {
+      disposeCanvas();
+      // A future mount gets a brand-new canvas instance, so the image must be
+      // re-loaded into it - clear the "already loaded" markers.
+      loadedIdRef.current = null;
+      loadedCanvasRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -140,12 +147,17 @@ export function CanvasWorkspace() {
     return () => registerCanvasBridge(null);
   }, [canvas, registerCanvasBridge]);
 
-  // Load the active image once per selection.
+  // Load the active image once per selection PER CANVAS INSTANCE. The canvas is
+  // recreated on every mount (and on StrictMode's double-mount), so the guard
+  // must also track which instance the image was already loaded into -
+  // otherwise a fresh canvas stays empty because the id check alone matches.
   useEffect(() => {
     const source = activeResult ?? activeFile;
     if (!canvas || !source) return;
-    if (loadedIdRef.current === source.id) return;
+    if (loadedIdRef.current === source.id && loadedCanvasRef.current === canvas)
+      return;
     loadedIdRef.current = source.id;
+    loadedCanvasRef.current = canvas;
     void loadImage(source);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvas, activeResult, activeFile]);

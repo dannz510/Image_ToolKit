@@ -105,6 +105,13 @@ export function useCanvas(
   const historyIndexRef = useRef(-1);
   const restoringRef = useRef(false);
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
+  /**
+   * Fabric appends its upper-canvas as a SIBLING of the lower canvas, so the
+   * canvas element alone is not enough to clean up an instance: everything is
+   * created inside this wrapper instead, and removing the wrapper removes the
+   * whole canvas pair.
+   */
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
   /** The canvas, readable inside callbacks without going stale. */
   const canvasLiveRef = useRef<fabric.Canvas | null>(null);
   const layersListenerRef = useRef<((layers: Layer[]) => void) | null>(null);
@@ -161,17 +168,44 @@ export function useCanvas(
 
   /* ------------------------------------------------------------ lifecycle */
 
+  const disposeCanvas = useCallback(() => {
+    // Read the live ref, not the `canvas` state: the mount effect's cleanup is
+    // created on the first render, when `canvas` is still null. Depending on
+    // state here never disposes the instance (and leaks its element), which is
+    // what used to leave a stale canvas in the DOM and an empty visible one.
+    canvasLiveRef.current?.dispose();
+    const node = wrapperRef.current ?? canvasElRef.current;
+    node?.parentElement?.removeChild(node);
+    wrapperRef.current = null;
+    canvasElRef.current = null;
+    canvasLiveRef.current = null;
+    setCanvas(null);
+    historyRef.current = [];
+    historyIndexRef.current = -1;
+  }, []);
+
   const initializeCanvas = useCallback(
     (container: HTMLDivElement) => {
       if (
-        canvasElRef.current &&
-        canvasElRef.current.parentElement === container
+        wrapperRef.current &&
+        wrapperRef.current.parentElement === container
       )
         return;
 
+      // Defensive: if a previous instance somehow outlived its cleanup, tear it
+      // down first so two fabric canvases can never share one container.
+      if (canvasLiveRef.current) disposeCanvas();
+
+      const wrapper = document.createElement("div");
+      wrapper.style.width = "100%";
+      wrapper.style.height = "100%";
+      wrapper.style.position = "relative";
+      container.appendChild(wrapper);
+      wrapperRef.current = wrapper;
+
       const canvasEl = document.createElement("canvas");
       canvasEl.className = "block h-full w-full touch-none";
-      container.appendChild(canvasEl);
+      wrapper.appendChild(canvasEl);
       canvasElRef.current = canvasEl;
 
       const fabricCanvas = new fabric.Canvas(canvasEl, {
@@ -210,23 +244,9 @@ export function useCanvas(
       setCanvas(fabricCanvas);
       saveToHistory();
     },
-    // Both callbacks now read the live ref, so this stays stable.
-    [],
+    // Defensive teardown keeps this stable; both callbacks read the live ref.
+    [disposeCanvas],
   );
-
-  const disposeCanvas = useCallback(() => {
-    if (canvas) {
-      canvas.dispose();
-      setCanvas(null);
-    }
-    if (canvasElRef.current?.parentElement) {
-      canvasElRef.current.parentElement.removeChild(canvasElRef.current);
-    }
-    canvasElRef.current = null;
-    canvasLiveRef.current = null;
-    historyRef.current = [];
-    historyIndexRef.current = -1;
-  }, [canvas]);
 
   /* --------------------------------------------------------- brush engine */
 

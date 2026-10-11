@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useStudio } from '../../contexts/StudioContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Icon } from '../ui/Icon';
@@ -12,6 +12,14 @@ export function ComparisonView() {
   const { t } = useLanguage();
   const [mode, setMode] = useState<'side' | 'slider'>('side');
   const [split, setSplit] = useState(50);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef(false);
+  /** Move the divider to the horizontal position of a client X coordinate. */
+  const applySplit = (clientX: number) => {
+    const rect = sliderRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    setSplit(Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100)));
+  };
   const {
     activeFile,
     activeFileId,
@@ -148,16 +156,37 @@ export function ComparisonView() {
           </div>
         ) : (
           <div
-            className="relative h-full min-h-0 select-none overflow-hidden rounded-xl border border-bg-border/30 mica checker"
-            onMouseMove={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              setSplit(((e.clientX - rect.left) / rect.width) * 100);
+            ref={sliderRef}
+            className="relative h-full min-h-0 cursor-ew-resize select-none touch-none overflow-hidden rounded-xl border border-bg-border/30 mica checker"
+            onPointerDown={(e) => {
+              // Explicit drag (pointer capture) + draggable={false} on the
+              // images: without both, browsers start a native image drag that
+              // hijacks the pointer and the divider stops following it, and
+              // touch screens never moved it at all (there was only a
+              // mouse-move binding).
+              e.currentTarget.setPointerCapture(e.pointerId);
+              dragRef.current = true;
+              applySplit(e.clientX);
+            }}
+            onPointerMove={(e) => {
+              if (!dragRef.current) return;
+              applySplit(e.clientX);
+            }}
+            onPointerUp={(e) => {
+              dragRef.current = false;
+              if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+            }}
+            onPointerCancel={() => {
+              dragRef.current = false;
             }}
           >
             <img
               src={activeFile.dataUrl}
               alt={activeFile.name}
-              className="absolute inset-0 h-full w-full object-contain"
+              draggable={false}
+              className="pointer-events-none absolute inset-0 h-full w-full object-contain"
             />
             <div
               className="absolute inset-0 overflow-hidden"
@@ -166,7 +195,8 @@ export function ComparisonView() {
               <img
                 src={displayedResult?.resultDataUrl ?? activeResult.resultDataUrl}
                 alt={activeResult.originalName}
-                className="absolute inset-0 h-full w-full object-contain"
+                draggable={false}
+                className="pointer-events-none absolute inset-0 h-full w-full object-contain"
               />
             </div>
             <div
